@@ -2,8 +2,77 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocked Play</title>
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        
+        /* Навбар */
+        nav{
+            font-size: 20px;
+        }
+
+        h1{
+        text-align: center;
+        font-size: 50px;
+        margin-top: 120px;
+        } 
+        p.top{
+        text-align: center;
+        font-size: 40px;
+       }
+       button.about{
+        position: relative;
+        top: 55%;
+        left: 44%;
+        font-size: 30px;
+       }
+       
+       h3.about-text{
+        margin-top: 400px;
+        font-size: 40px;
+       }
+       
+       p.about-text{
+        font-size: 30px;
+       }
+
+       h3.games{
+        text-align: center;
+        margin-top: 100px;
+        font-size: 40px;
+       }
+        
+       /* Подробнее */
+      
+       .games{
+        text-align: center;
+        font-size: 30px;
+       }
+       p.snake{
+        padding: 20px;
+       }
+       p.dino{
+        padding: 20px;
+       }
+       p.number{
+        padding: 20px;
+       }
+       p.clicker{
+        padding: 20px;
+       }
+       p.stone{
+        padding: 20px;
+       }
+       p.tetris{
+        padding: 20px;
+       }
+
+       .text{
+        margin-top: -98px;
+       }
+    </style>
 </head>
 <body>
         
@@ -15,14 +84,22 @@
     </nav>
         
         <!-- Заголовок -->
-    <h1>Добро пожаловать!</h1>
+    <h1>Welcome!</h1>
     <p class="top">Этот сайт предназначен для убивания времени.</p>
-    <p class="top">Наслаждайтесь!</p>
+    <p class="top">Наслаждайтесь</p>
 
     <button class="about">Подробнее</button>
     
         <!-- Подробнее -->
-    <h3>Список игр: </h3>
+    <div class="text">
+        <h3 class="about-text">Подробнее о сайте: </h3>
+        <p class="about-text">На этом сайте вы можете играть во всевозможные и невозможные игры (конечно ограниченно это все количеством игр)</p>
+        <p class="about-text">Играть можно как на ПК так и на телефоне!</p>
+        <p class="about-text">Все достижения заносяться в профиль</p>
+        <p class="about-text">Сиситема ачивок</p>
+    </div>
+
+    <h3 class="games">Список игр: </h3>
     
     <div class="games">
         <p class="snake"><a href="snake.html">Змейка</a></p>
@@ -31,14 +108,6 @@
         <p class="clicker"><a href="clicker.html">Кликер</a></p>
         <p class="stone"><a href="stone.html">Камень-ножницы-бумага</a></p>
         <p class="tetris"><a href="tetris.html">Тетрис</a></p>
-    </div>
-
-    <div class="text">
-        <h3 class="about-text">Подробнее о сайте: </h3>
-        <p class="about-text">На этом сайте вы можете играть во всевозможные и невозможные игры (конечно ограниченно это все количеством игр)</p>
-        <p class="about-text">Играть можно как на ПК так и на телефоне!</p>
-        <p class="about-text">Все достижения заносяться в профиль</p>
-        <p class="about-text">Сиситема ачивок</p>
     </div>
 
 </body>

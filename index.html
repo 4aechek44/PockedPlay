@@ -2,113 +2,172 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pocked Play</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
+ 
     <style>
-        
-        /* Навбар */
-        nav{
+ 
+        nav {
             font-size: 20px;
         }
-
-        h1{
-        text-align: center;
-        font-size: 50px;
-        margin-top: 120px;
-        } 
-        p.top{
-        text-align: center;
-        font-size: 40px;
-       }
-       button.about{
-        position: relative;
-        top: 55%;
-        left: 44%;
-        font-size: 30px;
-       }
-       
-       h3.about-text{
-        margin-top: 400px;
-        font-size: 40px;
-       }
-       
-       p.about-text{
-        font-size: 30px;
-       }
-
-       h3.games{
-        text-align: center;
-        margin-top: 100px;
-        font-size: 40px;
-       }
-        
-       /* Подробнее */
-      
-       .games{
-        text-align: center;
-        font-size: 30px;
-       }
-       p.snake{
-        padding: 20px;
-       }
-       p.dino{
-        padding: 20px;
-       }
-       p.number{
-        padding: 20px;
-       }
-       p.clicker{
-        padding: 20px;
-       }
-       p.stone{
-        padding: 20px;
-       }
-       p.tetris{
-        padding: 20px;
-       }
-
-       .text{
-        margin-top: -98px;
-       }
+ 
+        h1 {
+            text-align: center;
+            font-size: 50px;
+            margin-top: 120px;
+            font-family: 'Press Start 2P', monospace;
+        }
+ 
+        p.top {
+            text-align: center;
+            font-size: 40px;
+        }
+ 
+        button.about {
+            display: block;
+            margin: 40px auto 0 auto;
+            font-size: 30px;
+            font-family: 'Press Start 2P', monospace;
+            padding: 10px;
+        }
+ 
+        /* Подробнее — секция */
+        .text {
+            text-align: center;
+            padding-top: 300px;
+        }
+ 
+        .about-text1 {
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+ 
+        .about-text2 {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+ 
+        /* Карточки */
+        .cards {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            padding: 0 40px;
+        }
+ 
+        .card {
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            padding: 28px 32px;
+            border: 2px solid #333;
+            border-radius: 6px;
+            flex: 1;
+            min-width: 200px;
+            max-width: 280px;
+            color: #aaa;
+            background: #111;
+            position: relative;
+            transition: border-color 0.2s, color 0.2s;
+        }
+ 
+        .card::before {
+            content: '▶';
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            font-size: 11px;
+            color: #444;
+        }
+ 
+        .card:hover {
+            border-color: #666;
+            color: #ddd;
+        }
+ 
+        /* Список игр */
+        h3.games {
+            font-family: 'Press Start 2P', monospace;
+            text-align: center;
+            margin-top: 80px;
+            font-size: 18px;
+            color: #555;
+            letter-spacing: 2px;
+        }
+ 
+        .games {
+            text-align: center;
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            padding: 20px 0 60px;
+        }
+ 
+        .games p {
+            padding: 10px 20px;
+            transition: background 0.15s;
+        }
+ 
+        .games p:hover {
+            background: #1a1a1a;
+        }
+ 
+        .games p::before {
+            content: '> ';
+            color: #444;
+        }
+ 
+        .games a {
+            color: #888;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+ 
+        .games a:hover {
+            color: #ccc;
+        }
+ 
     </style>
 </head>
 <body>
-        
-        <!-- Навбар -->
+ 
+    <!-- Навбар -->
     <nav>
         <button class="nav-home"><a href="index.html">Главная</a></button>
         <button class="nav-games"><a href="gamehub.html">Игры</a></button>
         <button class="nav-profile"><a href="profile.html">Профиль</a></button>
     </nav>
-        
-        <!-- Заголовок -->
+ 
+    <!-- Заголовок -->
     <h1>Welcome!</h1>
     <p class="top">Этот сайт предназначен для убивания времени.</p>
     <p class="top">Наслаждайтесь</p>
-
-    <button class="about">Подробнее</button>
-    
-        <!-- Подробнее -->
+ 
+    <button class="about" onclick="document.querySelector('.text').scrollIntoView({behavior: 'smooth'})">
+    About</button>
+ 
+    <!-- Подробнее -->
     <div class="text">
-        <h3 class="about-text">Подробнее о сайте: </h3>
-        <p class="about-text">На этом сайте вы можете играть во всевозможные и невозможные игры (конечно ограниченно это все количеством игр)</p>
-        <p class="about-text">Играть можно как на ПК так и на телефоне!</p>
-        <p class="about-text">Все достижения заносяться в профиль</p>
-        <p class="about-text">Сиситема ачивок</p>
+        <h3 class="about-text1">Подробнее о сайте:</h3>
+        <p class="about-text2">На этом сайте вы можете играть во всевозможные и невозможные игры (конечно ограниченно это все количеством игр)</p>
+        <div class="cards">
+            <div class="card">🖥️ Играть можно на ПК и телефоне</div>
+            <div class="card">👤 Все достижения заносятся в профиль</div>
+            <div class="card">🏆 Система ачивок</div>
+        </div>
     </div>
-
-    <h3 class="games">Список игр: </h3>
-    
+ 
+    <h3 class="games">// СПИСОК ИГР</h3>
+ 
     <div class="games">
-        <p class="snake"><a href="snake.html">Змейка</a></p>
-        <p class="dino"><a href="dino.html">Динозаврик</a></p>
-        <p class="number"><a href="number.html">Угадай число</a></p>
-        <p class="clicker"><a href="clicker.html">Кликер</a></p>
-        <p class="stone"><a href="stone.html">Камень-ножницы-бумага</a></p>
-        <p class="tetris"><a href="tetris.html">Тетрис</a></p>
+        <p><a href="snake.html">Змейка</a></p>
+        <p><a href="dino.html">Динозаврик</a></p>
+        <p><a href="number.html">Угадай число</a></p>
+        <p><a href="clicker.html">Кликер</a></p>
+        <p><a href="stone.html">Камень-ножницы-бумага</a></p>
+        <p><a href="tetris.html">Тетрис</a></p>
     </div>
-
+ 
 </body>
 </html>

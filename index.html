@@ -1,3 +1,6 @@
+ · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,48 +11,91 @@
     <link rel="stylesheet" href="style.css">
  
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: #f0f0f0;
+            color: #111;
+        }
+ 
+        /* Canvas фиксирован на весь экран позади всего контента */
+        #bgCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+ 
+        /* Весь контент поверх canvas */
+        .content { position: relative; z-index: 1; }
  
         nav {
             font-size: 20px;
+            padding: 10px 16px;
+            background: rgba(240,240,240,0.7);
+            backdrop-filter: blur(2px);
         }
+ 
+        nav button {
+            background: rgba(255,255,255,0.7);
+            border: 2px solid #555;
+            font-size: 14px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-right: 6px;
+        }
+        nav button a { text-decoration: none; color: #222; }
+        nav button:hover { background: #fff; }
  
         h1 {
             text-align: center;
-            font-size: 50px;
-            margin-top: 120px;
+            font-size: 42px;
+            margin-top: 80px;
             font-family: 'Press Start 2P', monospace;
+            color: #222;
         }
  
         p.top {
             text-align: center;
-            font-size: 40px;
+            font-size: 26px;
+            color: #333;
+            margin-top: 14px;
         }
  
         button.about {
             display: block;
-            margin: 40px auto 0 auto;
-            font-size: 30px;
+            margin: 36px auto 0;
+            font-size: 16px;
             font-family: 'Press Start 2P', monospace;
-            padding: 10px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.7);
+            border: 3px solid #333;
+            color: #111;
+            cursor: pointer;
+            transition: background 0.2s;
         }
+        button.about:hover { background: #fff; }
  
-        /* Подробнее — секция */
         .text {
             text-align: center;
-            padding-top: 300px;
+            padding-top: 60px;
         }
  
-        .about-text1 {
-            font-size: 30px;
-            margin-bottom: 20px;
-        }
+        .about-text1 { font-size: 26px; margin-bottom: 16px; color: #111; }
  
         .about-text2 {
             font-size: 20px;
             margin-bottom: 30px;
+            color: #333;
+            max-width: 680px;
+            margin-left: auto;
+            margin-right: auto;
         }
  
-        /* Карточки */
+        /* Карточки в ряд, при узком экране переносятся */
         .cards {
             display: flex;
             justify-content: center;
@@ -62,92 +108,68 @@
             font-family: 'VT323', monospace;
             font-size: 22px;
             padding: 28px 32px;
-            border: 2px solid #333;
-            border-radius: 6px;
+            border: 2px solid #555;
             flex: 1;
             min-width: 200px;
             max-width: 280px;
-            color: #aaa;
-            background: #111;
+            color: #222;
+            background: rgba(255,255,255,0.65);
             position: relative;
-            transition: border-color 0.2s, color 0.2s;
+            transition: border-color 0.2s, background 0.2s;
         }
  
+        /* Стрелочка в углу каждой карточки */
         .card::before {
             content: '▶';
             position: absolute;
-            top: 8px;
-            left: 10px;
+            top: 8px; left: 10px;
             font-size: 11px;
-            color: #444;
+            color: #666;
         }
  
-        .card:hover {
-            border-color: #666;
-            color: #ddd;
-        }
+        .card:hover { border-color: #111; background: rgba(255,255,255,0.9); }
  
-        /* Список игр */
         h3.games {
             font-family: 'Press Start 2P', monospace;
             text-align: center;
             margin-top: 80px;
-            font-size: 18px;
-            color: #555;
+            font-size: 16px;
+            color: #333;
             letter-spacing: 2px;
         }
  
         .games {
             text-align: center;
             font-family: 'VT323', monospace;
-            font-size: 28px;
-            padding: 20px 0 60px;
+            font-size: 30px;
+            padding: 20px 0 140px;
         }
  
-        .games p {
-            padding: 10px 20px;
-            transition: background 0.15s;
-        }
- 
-        .games p:hover {
-            background: #1a1a1a;
-        }
- 
-        .games p::before {
-            content: '> ';
-            color: #444;
-        }
- 
-        .games a {
-            color: #888;
-            text-decoration: none;
-            letter-spacing: 1px;
-        }
- 
-        .games a:hover {
-            color: #ccc;
-        }
- 
+        .games p { padding: 10px 20px; transition: background 0.15s; }
+        .games p:hover { background: rgba(255,255,255,0.5); }
+        .games p::before { content: '> '; color: #666; }
+        .games a { color: #222; text-decoration: none; letter-spacing: 1px; }
+        .games a:hover { color: #000; text-decoration: underline; }
     </style>
 </head>
 <body>
  
-    <!-- Навбар -->
+<canvas id="bgCanvas"></canvas>
+ 
+<div class="content">
     <nav>
         <button class="nav-home"><a href="index.html">Главная</a></button>
         <button class="nav-games"><a href="gamehub.html">Игры</a></button>
         <button class="nav-profile"><a href="profile.html">Профиль</a></button>
     </nav>
  
-    <!-- Заголовок -->
     <h1>Welcome!</h1>
     <p class="top">Этот сайт предназначен для убивания времени.</p>
     <p class="top">Наслаждайтесь</p>
  
-    <button class="about" onclick="document.querySelector('.text').scrollIntoView({behavior: 'smooth'})">
-    About</button>
+    <!-- Кнопка плавно скроллит до секции .text -->
+    <button class="about" onclick="document.querySelector('.text').scrollIntoView({behavior:'smooth'})">About</button>
  
-    <!-- Подробнее -->
     <div class="text">
         <h3 class="about-text1">Подробнее о сайте:</h3>
         <p class="about-text2">На этом сайте вы можете играть во всевозможные и невозможные игры (конечно ограниченно это все количеством игр)</p>
@@ -159,7 +181,6 @@
     </div>
  
     <h3 class="games">// СПИСОК ИГР</h3>
- 
     <div class="games">
         <p><a href="snake.html">Змейка</a></p>
         <p><a href="dino.html">Динозаврик</a></p>
@@ -168,6 +189,317 @@
         <p><a href="stone.html">Камень-ножницы-бумага</a></p>
         <p><a href="tetris.html">Тетрис</a></p>
     </div>
+</div>
+ 
+<script>
+    // =====================
+    // НАСТРОЙКА CANVAS
+    // =====================
+    const canvas = document.getElementById('bgCanvas');
+    const ctx    = canvas.getContext('2d');
+ 
+    // Подгоняем canvas под размер окна
+    function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+ 
+    // =====================
+    // КОНСТАНТЫ
+    // =====================
+    const P = 4; // размер одного "пикселя" — все рисуется кратно этому числу
+ 
+    // Цветовая палитра в стиле дино-игры гугла
+    const C = {
+        sky:    '#f0f0f0', // фон неба
+        ground: '#535353', // верхний слой земли
+        ground2:'#404040', // нижний слой земли
+        line:   '#666',    // пунктир на земле
+        cloud:  '#d0d0d0', // облака
+        cactus: '#535353', // кактусы
+        rock:   '#666',    // камни
+        bird:   '#535353', // птицы
+        star:   '#ccc',    // звёздочки на небе
+        bush:   '#c8c8c8', // кусты
+        coin:   '#aaa',    // монеты
+    };
+ 
+    // =====================
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // =====================
+ 
+    // Округляет координату до сетки пикселей (чтобы всё выглядело пиксельно)
+    const px  = v => Math.round(v / P) * P;
+ 
+    // Случайное число от 0 до v
+    const r   = v => Math.random() * v;
+ 
+    // Случайное целое число от a до b
+    const ri  = (a, b) => Math.floor(a + Math.random() * (b - a));
+ 
+    // =====================
+    // СОЗДАНИЕ ОБЪЕКТОВ СЦЕНЫ
+    // =====================
+    // Каждый объект — это просто данные: позиция X, Y, скорость и т.д.
+    // Логика движения — в функции draw()
+ 
+    // Облака: 10 штук, случайные позиции и скорости
+    const clouds = Array.from({length: 10}, () => ({
+        x:     r(canvas.width * 2),
+        y:     30 + r(100),
+        w:     60 + ri(0, 6) * 8,
+        speed: 0.4 + r(0.5),
+    }));
+ 
+    // Кусты на заднем плане
+    const bushes = Array.from({length: 18}, (_, i) => ({
+        x:     i * 140 + r(80),
+        w:     24 + ri(0, 5) * 8,
+        speed: 0.8,
+    }));
+ 
+    // Кактусы: тип 0=маленький, 1=большой, 2=двойной
+    const cacti = Array.from({length: 10}, (_, i) => ({
+        x:     200 + i * 260 + r(120),
+        type:  ri(0, 3),
+        speed: 3,
+    }));
+ 
+    // Камни разного размера (size 1–3)
+    const rocks = Array.from({length: 8}, (_, i) => ({
+        x:     350 + i * 300 + r(150),
+        size:  ri(1, 3),
+        speed: 3,
+    }));
+ 
+    // Птицы: летят и машут крыльями (frame 0 или 1)
+    const birds = Array.from({length: 6}, (_, i) => ({
+        x:          400 + i * 350 + r(200),
+        y:          60  + r(120),
+        frame:      0,
+        frameTimer: 0,
+        speed:      3.5 + r(1),
+    }));
+ 
+    // Монеты: мигают (4 кадра анимации)
+    const coins = Array.from({length: 12}, (_, i) => ({
+        x:          300 + i * 220 + r(100),
+        y:          80  + r(80),
+        frame:      0,
+        frameTimer: 0,
+        speed:      2.2,
+    }));
+ 
+    // Декоративные звёздочки на небе (не движутся)
+    const stars = Array.from({length: 30}, () => ({
+        x: r(canvas.width),
+        y: r(canvas.height * 0.6),
+    }));
+ 
+    // =====================
+    // ФУНКЦИИ РИСОВАНИЯ
+    // =====================
+    // Каждая функция рисует один тип объекта по координатам (x, y)
+ 
+    function drawCloud(x, y, w) {
+        // Облако из нескольких прямоугольников
+        ctx.fillStyle = C.cloud;
+        [ [0.1, 0.4, 0.8, 0.6],
+          [0.2, 0.1, 0.6, 0.6],
+          [0.0, 0.3, 0.35,0.55],
+          [0.65,0.2, 0.35,0.55] ]
+        .forEach(([lx, ly, lw, lh]) =>
+            ctx.fillRect(px(x + w*lx), px(y + 20*ly), px(w*lw), px(20*lh))
+        );
+    }
+ 
+    function drawBush(x, gy, w) {
+        // Куст — три прямоугольника разной высоты
+        ctx.fillStyle = C.bush;
+        ctx.fillRect(px(x),         px(gy-12), px(w),      px(12));
+        ctx.fillRect(px(x + w*0.1), px(gy-20), px(w*0.5),  px(10));
+        ctx.fillRect(px(x + w*0.5), px(gy-16), px(w*0.4),  px(8));
+    }
+ 
+    function drawCactusSmall(x, gy) {
+        // Маленький кактус с двумя ветками
+        ctx.fillStyle = C.cactus;
+        ctx.fillRect(px(x+4),  px(gy-44), px(8),  px(44)); // ствол
+        ctx.fillRect(px(x),    px(gy-32), px(16), px(6));  // перекладина
+        ctx.fillRect(px(x),    px(gy-40), px(6),  px(14)); // левая ветка
+        ctx.fillRect(px(x+10), px(gy-28), px(6),  px(12)); // правая ветка
+    }
+ 
+    function drawCactusBig(x, gy) {
+        // Большой кактус с широкими ветками
+        ctx.fillStyle = C.cactus;
+        ctx.fillRect(px(x+6),  px(gy-60), px(10), px(60)); // ствол
+        ctx.fillRect(px(x-8),  px(gy-42), px(20), px(7));  // левая перекладина
+        ctx.fillRect(px(x-8),  px(gy-56), px(8),  px(20)); // левая ветка вверх
+        ctx.fillRect(px(x+16), px(gy-36), px(18), px(7));  // правая перекладина
+        ctx.fillRect(px(x+24), px(gy-50), px(8),  px(20)); // правая ветка вверх
+    }
+ 
+    function drawCactusDouble(x, gy) {
+        // Двойной кактус = маленький + большой рядом
+        drawCactusSmall(x, gy);
+        drawCactusBig(x + 32, gy);
+    }
+ 
+    function drawRock(x, gy, size) {
+        // Камень из трёх слоёв (трапеция)
+        const s = size * 10;
+        ctx.fillStyle = C.rock;
+        ctx.fillRect(px(x),          px(gy - s*1.2), px(s*2.4), px(s*1.2)); // основание
+        ctx.fillRect(px(x + s*0.3),  px(gy - s*1.8), px(s*1.6), px(s*0.8)); // середина
+        ctx.fillStyle = '#777';
+        ctx.fillRect(px(x + s*0.4),  px(gy - s*1.6), px(s*0.5), px(s*0.4)); // блик
+    }
+ 
+    function drawBird(x, y, frame) {
+        // Птица: тело + голова + клюв + крылья (2 кадра)
+        ctx.fillStyle = C.bird;
+        ctx.fillRect(px(x+4),  px(y+4), px(12), px(8)); // тело
+        ctx.fillRect(px(x+14), px(y+2), px(6),  px(6)); // голова
+        ctx.fillRect(px(x+20), px(y+4), px(4),  px(3)); // клюв
+        // Крылья меняются каждые 10 тиков
+        if (frame === 0) {
+            ctx.fillRect(px(x),   px(y),    px(8), px(5)); // крыло вверх
+            ctx.fillRect(px(x+2), px(y+8),  px(8), px(3));
+        } else {
+            ctx.fillRect(px(x),   px(y+4),  px(8), px(3)); // крыло вниз
+            ctx.fillRect(px(x+2), px(y+10), px(8), px(4));
+        }
+    }
+ 
+    function drawCoin(x, y, frame) {
+        // Монета мигает за счёт смены яркости
+        const colors = ['#aaa', '#bbb', '#999', '#bbb'];
+        ctx.fillStyle = colors[frame % 4];
+        ctx.fillRect(px(x+2), px(y),    px(8),  px(2));  // верх
+        ctx.fillRect(px(x),   px(y+2),  px(12), px(8));  // середина
+        ctx.fillRect(px(x+2), px(y+10), px(8),  px(2));  // низ
+        ctx.fillStyle = '#ccc';
+        ctx.fillRect(px(x+2), px(y+2),  px(3),  px(4));  // блик
+    }
+ 
+    function drawDino(x, gy, t) {
+        // Декоративный динозаврик в правом нижнем углу
+        // t — глобальный счётчик тиков, используется для анимации ног
+        ctx.fillStyle = '#535353';
+        const leg = Math.floor(t / 8) % 2; // нога 0 или 1, меняется каждые 8 тиков
+ 
+        ctx.fillRect(px(x+4),  px(gy-36), px(20), px(16)); // тело
+        ctx.fillRect(px(x+16), px(gy-48), px(16), px(14)); // голова
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(px(x+28), px(gy-46), px(4),  px(4));  // белок глаза
+        ctx.fillStyle = '#535353';
+        ctx.fillRect(px(x+30), px(gy-46), px(2),  px(2));  // зрачок
+        ctx.fillRect(px(x),    px(gy-28), px(8),  px(8));  // хвост верх
+        ctx.fillRect(px(x-4),  px(gy-22), px(8),  px(6));  // хвост низ
+ 
+        // Ноги чередуются: одна длиннее другой
+        if (leg === 0) {
+            ctx.fillRect(px(x+8),  px(gy-20), px(6), px(20)); // левая нога длинная
+            ctx.fillRect(px(x+16), px(gy-20), px(6), px(14)); // правая нога короткая
+        } else {
+            ctx.fillRect(px(x+8),  px(gy-20), px(6), px(14)); // левая нога короткая
+            ctx.fillRect(px(x+16), px(gy-20), px(6), px(20)); // правая нога длинная
+        }
+    }
+ 
+    // =====================
+    // ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ
+    // =====================
+    let tick = 0; // счётчик кадров, растёт каждый кадр
+ 
+    function draw() {
+        const W  = canvas.width;
+        const H  = canvas.height;
+        const gy = H * 0.78; // Y-координата поверхности земли
+ 
+        // Очищаем canvas перед каждым кадром
+        ctx.clearRect(0, 0, W, H);
+ 
+        // --- Небо ---
+        ctx.fillStyle = C.sky;
+        ctx.fillRect(0, 0, W, H);
+ 
+        // --- Звёздочки (статичные декоративные точки) ---
+        ctx.fillStyle = C.star;
+        stars.forEach(s => ctx.fillRect(px(s.x % W), px(s.y), P, P));
+ 
+        // --- Облака: двигаются влево, при выходе — появляются справа ---
+        clouds.forEach(c => {
+            drawCloud(c.x, c.y, c.w);
+            c.x -= c.speed;
+            if (c.x + c.w < 0) { c.x = W + c.w; c.y = 30 + r(100); }
+        });
+ 
+        // --- Кусты: задний план, медленнее кактусов ---
+        bushes.forEach(b => {
+            drawBush(b.x, gy, b.w);
+            b.x -= b.speed;
+            if (b.x + b.w < 0) b.x += W + 200;
+        });
+ 
+        // --- Земля: верхняя линия + закрашенный прямоугольник ---
+        ctx.fillStyle = C.ground;
+        ctx.fillRect(0, px(gy), W, P * 2);
+        ctx.fillStyle = C.ground2;
+        ctx.fillRect(0, px(gy + P*2), W, H - gy);
+ 
+        // --- Пунктир на земле: двигается синхронно с объектами ---
+        ctx.fillStyle = C.line;
+        for (let i = -(tick % 40); i < W; i += 40)
+            ctx.fillRect(px(i), px(gy + 8), 20, P);
+ 
+        // --- Монеты: летят и мигают ---
+        coins.forEach(c => {
+            // Обновляем кадр анимации каждые 6 тиков
+            if (++c.frameTimer > 6) { c.frame++; c.frameTimer = 0; }
+            drawCoin(c.x, c.y, c.frame);
+            c.x -= c.speed;
+            if (c.x < -20) c.x += W + ri(100, 300);
+        });
+ 
+        // --- Камни ---
+        rocks.forEach(rock => {
+            drawRock(rock.x, gy, rock.size);
+            rock.x -= rock.speed;
+            if (rock.x < -60) rock.x += W + ri(100, 400);
+        });
+ 
+        // --- Кактусы ---
+        cacti.forEach(c => {
+            if      (c.type === 0) drawCactusSmall(c.x, gy);
+            else if (c.type === 1) drawCactusBig(c.x, gy);
+            else                   drawCactusDouble(c.x, gy);
+            c.x -= c.speed;
+            // При выходе за экран — случайная позиция и новый тип
+            if (c.x < -80) { c.x += W + ri(150, 400); c.type = ri(0, 3); }
+        });
+ 
+        // --- Птицы: летят и машут крыльями ---
+        birds.forEach(b => {
+            // Переключаем кадр крыльев каждые 10 тиков
+            if (++b.frameTimer > 10) { b.frame = 1 - b.frame; b.frameTimer = 0; }
+            drawBird(b.x, b.y, b.frame);
+            b.x -= b.speed;
+            if (b.x < -40) { b.x += W + ri(200, 500); b.y = 50 + r(130); }
+        });
+ 
+        // --- Динозаврик-декорация (всегда в правом нижнем углу) ---
+        drawDino(W - 80, gy, tick);
+ 
+        tick++;
+        requestAnimationFrame(draw); // запрашиваем следующий кадр у браузера
+    }
+ 
+    draw(); // запускаем цикл
+</script>
  
 </body>
 </html>

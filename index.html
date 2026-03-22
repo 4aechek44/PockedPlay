@@ -9,6 +9,8 @@ Copy
     <title>Pocked Play</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="navbar.js"></script>
+    <script src="navbar.js" defer></script>
  
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,25 +32,6 @@ Copy
  
         /* Весь контент поверх canvas */
         .content { position: relative; z-index: 1; }
- 
-        nav {
-            font-size: 20px;
-            padding: 10px 16px;
-            background: rgba(240,240,240,0.7);
-            backdrop-filter: blur(2px);
-        }
- 
-        nav button {
-            background: rgba(255,255,255,0.7);
-            border: 2px solid #555;
-            font-size: 14px;
-            padding: 6px 12px;
-            cursor: pointer;
-            font-family: inherit;
-            margin-right: 6px;
-        }
-        nav button a { text-decoration: none; color: #222; }
-        nav button:hover { background: #fff; }
  
         h1 {
             text-align: center;
@@ -157,11 +140,6 @@ Copy
 <canvas id="bgCanvas"></canvas>
  
 <div class="content">
-    <nav>
-        <button class="nav-home"><a href="index.html">Главная</a></button>
-        <button class="nav-games"><a href="gamehub.html">Игры</a></button>
-        <button class="nav-profile"><a href="profile.html">Профиль</a></button>
-    </nav>
  
     <h1>Welcome!</h1>
     <p class="top">Этот сайт предназначен для убивания времени.</p>
@@ -182,12 +160,12 @@ Copy
  
     <h3 class="games">// СПИСОК ИГР</h3>
     <div class="games">
-        <p><a href="snake.html">Змейка</a></p>
-        <p><a href="dino.html">Динозаврик</a></p>
-        <p><a href="number.html">Угадай число</a></p>
-        <p><a href="clicker.html">Кликер</a></p>
-        <p><a href="stone.html">Камень-ножницы-бумага</a></p>
-        <p><a href="tetris.html">Тетрис</a></p>
+        <p><a href="games/snake.html">Змейка</a></p>
+        <p><a href="games/dino.html">Динозаврик</a></p>
+        <p><a href="games/number.html">Угадай число</a></p>
+        <p><a href="games/clicker.html">Кликер</a></p>
+        <p><a href="games/stone.html">Камень-ножницы-бумага</a></p>
+        <p><a href="games/tetris.html">Тетрис</a></p>
     </div>
 </div>
  

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PP — Динозаврик</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- В проекте подключить: <link rel="stylesheet" href="../style.css"> и <script src="../navbar.js"></script> -->
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #1a0e05;
+            color: #f0d090;
+            font-family: 'VT323', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Навбар — в проекте вставляется через navbar.js, здесь хардкод */
+        #main-nav {
+            display: flex;
+            gap: 6px;
+            padding: 10px 16px;
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+        #main-nav button {
+            border: 2px solid #7a5a30;
+            background: transparent;
+            font-size: 14px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+        #main-nav button:hover { background: #f0d09022; }
+        #main-nav button a { text-decoration: none; color: #f0d090; }
+
+        h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: #f4a840;
+            letter-spacing: 3px;
+            margin: 18px 0 6px;
+            text-shadow: 0 0 12px #f4a84088;
+        }
+
+        .scores {
+            display: flex;
+            gap: 30px;
+            font-size: 22px;
+            color: #b07840;
+            margin-bottom: 12px;
+        }
+        .scores span { color: #f4d060; }
+
+        #gameCanvas {
+            border: 2px solid #7a5a30;
+            background: #1a0e05;
+            display: block;
+            image-rendering: pixelated; /* резкие пиксели без сглаживания */
+        }
+
+        /* Оверлей — поверх canvas, центрирует текст и кнопку */
+        #overlay {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            pointer-events: none; /* клики проходят сквозь, кроме .btn-row */
+        }
+        #overlay.hidden { display: none; }
+
+        #overlay .big {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            color: #f4a840;
+            text-shadow: 0 0 16px #f4a84088;
+            text-align: center;
+            line-height: 1.8;
+        }
+        #overlay .hint { font-size: 22px; color: #b07840; letter-spacing: 1px; }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 8px; pointer-events: all; }
+        button.game-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            background: transparent;
+            border: 2px solid #f4a840;
+            color: #f4d060;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: background 0.15s;
+            letter-spacing: 1px;
+        }
+        button.game-btn:hover { background: #f4a84022; }
+    </style>
+</head>
+<body>
+
+<nav id="main-nav">
+    <button><a href="../index.html">Главная</a></button>
+    <button><a href="../gamehub.html">Игры</a></button>
+    <button><a href="../profile.html">Профиль</a></button>
+</nav>
+
+<h1>// ДИНОЗАВРИК //</h1>
+
+<div class="scores">
+    ОЧКИ: <span id="scoreVal">0</span>&nbsp;&nbsp;&nbsp;РЕКОРД: <span id="hiVal">0</span>
+</div>
+
+<!-- Обёртка position:relative нужна чтобы оверлей позиционировался поверх canvas -->
+<div style="position:relative; display:inline-block;">
+    <canvas id="gameCanvas" width="800" height="260"></canvas>
+    <div id="overlay">
+        <div class="big"  id="overlayText">ДИНОЗАВРИК</div>
+        <div class="hint" id="overlayHint">нажми ПРОБЕЛ или ↑ чтобы начать</div>
+        <div class="btn-row">
+            <button class="game-btn" id="startBtn">СТАРТ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// =====================================================================
+// КОНСТАНТЫ
+// Все "магические" числа вынесены сюда — легко менять баланс игры.
+// =====================================================================
+
+// Цвета пустынной темы
+const C = {
+    dino:    '#8fbb50', // тело дино — оливковый
+    dino2:   '#6a9030', // тени и ноги
+    dino3:   '#4a6820', // тёмные детали / ступни
+    dinoEye: '#1a0e05', // глаз
+    obs:     '#3a8830', // кактус зелёный
+    obs2:    '#255520', // тень кактуса
+    ground:  '#c8892a', // верхняя кромка земли
+    ground2: '#8a5518', // тело земли
+    text:    '#f4d060', // цвет счёта на canvas
+};
+
+// Игровое поле
+const W = 800, H = 260;     // размеры canvas
+const GY = 200;             // Y верхнего края земли
+const GH = 8;               // толщина земли
+const FLOOR = GY - GH;      // Y поверхности по которой бегут (удобный псевдоним)
+
+// Динозавр
+const DX = 80;              // фиксированная X дино
+const DW = 28, DH = 38;     // ширина и высота (стоя)
+const DH_DUCK = 22;         // высота приседания
+const JUMP_V  = -16;        // начальная скорость прыжка (отрицательная = вверх)
+const GRAVITY = 0.75;       // ускорение свободного падения
+
+// Скорость
+const SPEED_START = 5;      // начальная скорость (px/кадр)
+const SPEED_MAX   = 16;     // максимальная скорость
+const SPEED_GROW  = 0.003;  // прирост скорости за кадр
+
+// Препятствия
+const OBS_COOLDOWN_BASE = 90;   // базовый интервал до следующего (кадры)
+const OBS_COOLDOWN_MIN  = 45;   // минимальный интервал
+const OBS_COOLDOWN_RAND = 40;   // случайный разброс поверх
+
+// Пыль
+const DUST_LIFE_BASE = 18;  // базовое время жизни частицы
+const DUST_LIFE_RAND = 10;  // случайный разброс
+
+
+// =====================================================================
+// СОСТОЯНИЕ
+// Все мутируемые переменные — здесь.
+// =====================================================================
+
+let state   = 'idle';       // 'idle' | 'running' | 'dead'
+let score   = 0;
+let hiScore = 0;
+let speed   = SPEED_START;
+let frame   = 0;            // счётчик кадров от начала текущей игры
+let rafId   = null;         // ID requestAnimationFrame (чтобы не запускать цикл дважды)
+
+// Объект динозавра
+const dino = {
+    y:        FLOOR - DH,  // текущая Y верхнего края (стоит на земле)
+    vy:       0,           // вертикальная скорость
+    onGround: true,
+    ducking:  false,
+    legPhase: 0,           // 0 или 1 — какая нога выдвинута вперёд
+    legTimer: 0,           // счётчик до смены фазы ноги
+};
+
+let obstacles     = [];    // массив активных препятствий
+let obsCooldown   = 0;     // кадров до следующего препятствия
+let dustParticles = [];    // массив частиц пыли
+
+
+// =====================================================================
+// СТАТИЧНЫЕ ДАННЫЕ ФОН
+// Генерируем один раз, используем каждый кадр.
+// =====================================================================
+
+// Звёзды: случайные позиции и яркость (мерцают через Math.sin)
+const stars = Array.from({ length: 60 }, () => ({
+    x:      Math.random() * W,
+    y:      Math.random() * 140,
+    s:      1 + Math.random() * 1.5,       // размер 1–2.5 px
+    bright: 0.3 + Math.random() * 0.7,    // базовая яркость
+}));
+
+// DOM
+const canvas     = document.getElementById('gameCanvas');
+const ctx        = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false; // пиксельная графика без сглаживания
+
+const overlay    = document.getElementById('overlay');
+const overlayTxt = document.getElementById('overlayText');
+const overlayHint= document.getElementById('overlayHint');
+const startBtn   = document.getElementById('startBtn');
+const scoreEl    = document.getElementById('scoreVal');
+const hiEl       = document.getElementById('hiVal');
+
+// Градиент неба создаём один раз — не аллоцируем объект каждый кадр
+const skyGrad = ctx.createLinearGradient(0, 0, 0, FLOOR);
+skyGrad.addColorStop(0,   '#1a0e05'); // тёмный верх
+skyGrad.addColorStop(0.6, '#2a1505'); // середина
+skyGrad.addColorStop(1,   '#6b2a10'); // красно-оранжевый закат у горизонта
+
+
+// =====================================================================
+// УПРАВЛЕНИЕ
+// =====================================================================
+
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); onJump(); }
+    if (e.code === 'ArrowDown')                     { e.preventDefault(); onDuck(true); }
+});
+document.addEventListener('keyup', e => { if (e.code === 'ArrowDown') onDuck(false); });
+canvas.addEventListener('pointerdown', onJump);   // тап по canvas — прыжок
+startBtn.addEventListener('click',     onJump);   // кнопка в оверлее
+
+function onJump() {
+    // Из неактивного состояния — запускаем игру
+    if (state === 'idle' || state === 'dead') { startGame(); return; }
+    // Прыжок только стоя на земле, без приседания
+    if (state === 'running' && dino.onGround && !dino.ducking) {
+        dino.vy       = JUMP_V;
+        dino.onGround = false;
+        spawnDust(6, true); // больше пыли при отрыве от земли
+    }
+}
+
+function onDuck(active) {
+    if (state === 'running') dino.ducking = active;
+}
+
+
+// =====================================================================
+// ИГРОВОЙ ЦИКЛ — СТАРТ / РЕСТАРТ / КОНЕЦ
+// =====================================================================
+
+function startGame() {
+    // Сбрасываем всё игровое состояние
+    score = 0; speed = SPEED_START; frame = 0;
+    obstacles = []; obsCooldown = 60; dustParticles = [];
+
+    // Сброс дино
+    dino.y = FLOOR - DH; dino.vy = 0;
+    dino.onGround = true; dino.ducking = false;
+    dino.legPhase = 0;    dino.legTimer = 0;
+
+    state = 'running';
+    overlay.classList.add('hidden');
+
+    // Запускаем цикл только один раз (при рестарте он уже крутится)
+    if (!rafId) loop();
+}
+
+function gameOver() {
+    state = 'dead';
+    if (score > hiScore) { hiScore = score; hiEl.textContent = hiScore; }
+
+    overlayTxt.innerHTML    = 'GAME&nbsp;OVER';
+    overlayHint.textContent = 'Очки: ' + score;
+    startBtn.textContent    = 'ЕЩЁ РАЗ';
+    overlay.classList.remove('hidden');
+
+    // Краткая вспышка рамки canvas
+    canvas.style.boxShadow = '0 0 30px #f4a840aa';
+    setTimeout(() => { canvas.style.boxShadow = ''; }, 400);
+}
+
+
+// =====================================================================
+// ПРЕПЯТСТВИЯ
+// =====================================================================
+
+// Данные типов: вероятностные границы для Math.random()
+// prob — верхняя граница диапазона (кумулятивно), bird — всё остальное
+const OBS_DEFS = [
+    { w: 18, h: 34, type: 'cactus_s', prob: 0.35 },
+    { w: 24, h: 52, type: 'cactus_l', prob: 0.65 },
+    { w: 46, h: 34, type: 'cactus_d', prob: 0.82 },
+    { w: 36, h: 22, type: 'bird' },
+];
+const BIRD_HEIGHTS = [80, 50, 110]; // высоты полёта птицы над FLOOR
+
+function spawnObstacle() {
+    const r   = Math.random();
+    // find вернёт первый тип, чья граница вероятности > r
+    const def = OBS_DEFS.find(t => !t.prob || r < t.prob);
+
+    const isBird = def.type === 'bird';
+    // Для кактусов y = FLOOR - h; для птиц — выше на случайную высоту
+    const yOff   = isBird ? BIRD_HEIGHTS[Math.random() * 3 | 0] : def.h;
+
+    obstacles.push({
+        x:         W + 20,      // появляется за правым краем
+        y:         FLOOR - yOff,
+        w:         def.w,
+        h:         def.h,
+        type:      def.type,
+        wingPhase: 0,           // используется только птицей
+        wingTimer: 0,
+    });
+}
+
+// Интервал сокращается с ростом скорости, но не ниже минимума
+function nextObsCooldown() {
+    return Math.max(OBS_COOLDOWN_MIN, OBS_COOLDOWN_BASE - (speed * 3 | 0))
+         + (Math.random() * OBS_COOLDOWN_RAND | 0);
+}
+
+
+// =====================================================================
+// ПЫЛЬ
+// =====================================================================
+
+function spawnDust(n, isJump) {
+    for (let i = 0; i < n; i++) {
+        const life = DUST_LIFE_BASE + Math.random() * DUST_LIFE_RAND;
+        dustParticles.push({
+            x:       DX + DW * 0.5 + (Math.random() - 0.5) * 10,
+            y:       FLOOR,
+            vx:      (Math.random() - 0.5) * 2 - (isJump ? 0 : 1), // при беге — назад
+            vy:      -Math.random() * 2 - (isJump ? 1 : 0.5),       // при прыжке — выше
+            life,
+            maxLife: life, // нужен для расчёта прозрачности fade-out
+        });
+    }
+}
+
+
+// =====================================================================
+// РИСОВАНИЕ — вспомогательные функции
+// =====================================================================
+
+// Округляем до целого — избегаем субпиксельного сглаживания
+const px = Math.round;
+
+// Короткий псевдоним для заливки прямоугольника
+function rect(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(px(x), px(y), px(w), px(h));
+}
+
+
+// =====================================================================
+// РИСОВАНИЕ — сцена
+// =====================================================================
+
+function drawBackground() {
+    // Небо — предвычисленный градиент (не аллоцируем каждый кадр)
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Луна — пиксельный круг + кратеры
+    rect(700, 20, 20, 20, '#f4e8a0');
+    rect(702, 18, 16,  2, '#f4e8a0'); // верхняя шапка
+    rect(702, 40, 16,  2, '#f4e8a0'); // нижняя шапка
+    rect(698, 22,  2, 16, '#f4e8a0'); // левый край
+    rect(720, 22,  2, 16, '#f4e8a0'); // правый край
+    rect(706, 26,  4,  4, '#e0d080'); // кратер 1
+    rect(714, 30,  3,  3, '#e0d080'); // кратер 2
+
+    // Звёзды — мерцают по синусу, каждая с независимой фазой (x как seed)
+    for (let i = 0; i < stars.length; i++) {
+        const s     = stars[i];
+        const alpha = (s.bright * (0.5 + 0.5 * Math.sin(frame * 0.03 + s.x))).toFixed(2);
+        ctx.fillStyle = 'rgba(255,230,160,' + alpha + ')';
+        ctx.fillRect(px(s.x), px(s.y), px(s.s), px(s.s));
+    }
+
+    // Силуэты дюн у горизонта (статичные — не двигаются, рисуем поверх неба)
+    // Каждая дюна — «арка» из столбиков разной высоты
+    const duneY = FLOOR - 2;
+    for (let i = 0; i < 12; i++) rect(i * 8,       duneY - 30 + Math.abs(i - 6)  * 3,  9, 32, '#3a1a08');
+    for (let i = 0; i < 10; i++) rect(200 + i * 9,  duneY - 20 + Math.abs(i - 5)  * 2, 10, 22, '#2e1406');
+    for (let i = 0; i < 14; i++) rect(500 + i * 7,  duneY - 35 + Math.abs(i - 7)  * 3,  8, 37, '#3a1a08');
+}
+
+function drawGround() {
+    // Светлая кромка и тёмное тело земли
+    rect(0, FLOOR,     W, 3,  C.ground);
+    rect(0, FLOOR + 3, W, GH, C.ground2);
+
+    // Камешки и трещинки — прокручиваются со скоростью бега
+    // Берём смещение по модулю W, чтобы зациклить без разрыва
+    const offset = (frame * speed * 0.4) % W;
+    for (let i = 0; i < 8; i++) {
+        const bx = (i * 110 - offset + W) % W;
+        rect(bx,      FLOOR + 3, 6, 2, '#a06820');
+        rect(bx + 20, FLOOR + 4, 3, 1, '#a06820');
+        rect(bx + 40, FLOOR + 2, 4, 1, '#c07828');
+    }
+}
+
+// Дино стоя / в прыжке
+function drawDino() {
+    if (dino.ducking) { drawDinoDucking(); return; }
+
+    const x = DX, y = dino.y;
+
+    rect(x + 4,  y + 8,  20, 20, C.dino);    // туловище
+    rect(x + 8,  y,      18, 14, C.dino);    // голова
+    rect(x + 22, y + 2,   6, 10, C.dino);    // морда
+    rect(x + 22, y + 3,   3,  3, C.dinoEye); // глаз
+    rect(x,      y + 14,  6,  6, C.dino2);   // хвост (верх)
+    rect(x - 4,  y + 18,  5,  4, C.dino3);   // хвост (кончик)
+    rect(x + 18, y + 14,  8,  4, C.dino2);   // рука
+
+    // Ноги — анимируются только на земле; в прыжке — вместе
+    if (dino.onGround) {
+        if (dino.legPhase === 0) {
+            rect(x + 6,  y + 28, 6, 10, C.dino2); // левая вперёд
+            rect(x + 14, y + 28, 6,  6, C.dino3); // правая назад
+            rect(x + 6,  y + 36, 9,  3, C.dino3); // ступня
+        } else {
+            rect(x + 6,  y + 28, 6,  6, C.dino3);
+            rect(x + 14, y + 28, 6, 10, C.dino2);
+            rect(x + 13, y + 36, 9,  3, C.dino3);
+        }
+    } else {
+        rect(x + 6,  y + 28, 6, 10, C.dino2);
+        rect(x + 14, y + 28, 6, 10, C.dino2);
+    }
+}
+
+// Дино приседает — ниже и шире; хитбокс тоже уменьшается
+function drawDinoDucking() {
+    const x = DX, y = FLOOR - DH_DUCK;
+
+    rect(x,      y + 4,  32, 14, C.dino);    // приплюснутое тело
+    rect(x + 16, y,      14, 10, C.dino);    // голова
+    rect(x + 28, y + 2,   4,  7, C.dino);    // морда
+    rect(x + 28, y + 2,   3,  3, C.dinoEye); // глаз
+    rect(x - 2,  y + 8,   5,  4, C.dino2);   // хвост
+
+    if (dino.legPhase === 0) {
+        rect(x + 6,  y + 18, 6, 6, C.dino2);
+        rect(x + 14, y + 18, 6, 4, C.dino3);
+    } else {
+        rect(x + 6,  y + 18, 6, 4, C.dino3);
+        rect(x + 14, y + 18, 6, 6, C.dino2);
+    }
+}
+
+function drawObstacles() {
+    for (let i = 0; i < obstacles.length; i++) {
+        const { x, y, w, h, type, wingPhase } = obstacles[i];
+
+        if (type === 'cactus_s') {
+            rect(x + 6, y,      6,  h, C.obs);  // ствол
+            rect(x,     y + 8,  6, 14, C.obs2); // левая ветка
+            rect(x + 12,y + 10, 6, 12, C.obs2); // правая ветка
+            rect(x,     y + 8,  w,  4, C.obs);  // горизонтальный шип
+
+        } else if (type === 'cactus_l') {
+            rect(x + 8, y,       8,  h, C.obs);
+            rect(x,     y + 12,  8, 20, C.obs2);
+            rect(x + 16,y + 16,  8, 18, C.obs2);
+            rect(x,     y + 12,  w,  5, C.obs);
+            rect(x + 4, y + 8,  16,  3, C.obs); // шип сверху
+
+        } else if (type === 'cactus_d') {
+            // Левый кактус
+            rect(x + 6,  y,      6,  h, C.obs);
+            rect(x,      y + 8,  6, 14, C.obs2);
+            rect(x,      y + 8, 14,  4, C.obs);
+            // Правый кактус
+            rect(x + 26, y,      6,  h, C.obs);
+            rect(x + 32, y + 8,  6, 14, C.obs2);
+            rect(x + 26, y + 8, 12,  4, C.obs);
+
+        } else { // bird
+            rect(x + 4,  y + 6,  28, 10, '#ff9966'); // тело
+            rect(x + 28, y + 4,   8,  8, '#ff9966'); // голова
+            rect(x + 34, y + 5,   4,  4, '#1a0e05'); // глаз
+            rect(x + 36, y + 8,   4,  3, '#ffcc88'); // клюв
+            // Крыло: wingPhase 0 = вверх, 1 = вниз
+            rect(x + 8, wingPhase ? y + 12 : y - 6, 18, 7, '#ffaa77');
+            rect(x + 4, y + 16, 20, 5, '#cc6633');   // хвост
+        }
+    }
+}
+
+function drawDust() {
+    for (let i = 0; i < dustParticles.length; i++) {
+        const p     = dustParticles[i];
+        const t     = p.life / p.maxLife;          // 1.0 → 0.0 по мере жизни
+        const alpha = (t * 0.6).toFixed(2);        // fade-out прозрачность
+        const s     = 2 + t * 3;                   // частица сжимается
+        ctx.fillStyle = 'rgba(200,137,42,' + alpha + ')';
+        ctx.fillRect(px(p.x - s * 0.5), px(p.y - s * 0.5), px(s), px(s));
+    }
+}
+
+function drawScore() {
+    ctx.fillStyle = C.text;
+    ctx.font      = '14px "Press Start 2P", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(score).padStart(5, '0'), W - 10, 24);
+    ctx.textAlign = 'left';
+}
+
+
+// =====================================================================
+// КОЛЛИЗИИ
+// AABB (axis-aligned bounding box) с зазором — чтобы игра не ощущалась
+// несправедливой из-за пиксельных краёв спрайтов.
+// =====================================================================
+
+function checkCollision() {
+    const M  = 4;                                   // зазор в px
+    const dh = dino.ducking ? DH_DUCK : DH;
+    const dy = dino.ducking ? FLOOR - DH_DUCK : dino.y;
+
+    // Хитбокс дино
+    const dx1 = DX + M,      dy1 = dy + M;
+    const dx2 = DX + DW - M, dy2 = dy + dh - M;
+
+    for (let i = 0; i < obstacles.length; i++) {
+        const o = obstacles[i];
+        // Классическая проверка пересечения двух прямоугольников
+        if (dx1 < o.x + o.w - M &&
+            dx2 > o.x + M       &&
+            dy1 < o.y + o.h - M &&
+            dy2 > o.y + M) return true;
+    }
+    return false;
+}
+
+
+// =====================================================================
+// ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ
+// Структура каждого кадра: обновить состояние → нарисовать сцену.
+// rAF гарантирует синхронизацию с частотой монитора (обычно 60 fps).
+// =====================================================================
+
+function loop() {
+    rafId = requestAnimationFrame(loop);
+    frame++;
+
+    // ---- UPDATE (только во время игры) ----
+    if (state === 'running') {
+
+        // Скорость растёт линейно и упирается в максимум
+        speed = Math.min(SPEED_MAX, SPEED_START + frame * SPEED_GROW);
+
+        // Счёт — 1 очко за 6 кадров; | 0 быстрее Math.floor для положительных чисел
+        score = frame / 6 | 0;
+        scoreEl.textContent = score;
+
+        // Физика дино: гравитация и проверка приземления
+        if (!dino.onGround) {
+            dino.vy += GRAVITY;
+            dino.y  += dino.vy;
+            if (dino.y >= FLOOR - DH) {
+                dino.y = FLOOR - DH;
+                dino.vy = 0;
+                dino.onGround = true;
+                spawnDust(4, false);
+            }
+        }
+
+        // Анимация ног: скорость смены фаз ускоряется вместе с бегом
+        if (dino.onGround) {
+            const legSpeed = Math.max(4, 12 - (speed | 0));
+            if (++dino.legTimer >= legSpeed) {
+                dino.legPhase ^= 1;   // переключаем 0 <-> 1 через XOR (быстрее if/else)
+                dino.legTimer  = 0;
+                if (dino.legPhase === 0) spawnDust(2, false);
+            }
+        }
+
+        // Спавн и движение препятствий
+        if (--obsCooldown <= 0) {
+            spawnObstacle();
+            obsCooldown = nextObsCooldown();
+        }
+        for (let i = 0; i < obstacles.length; i++) {
+            obstacles[i].x -= speed;
+            if (obstacles[i].type === 'bird') {
+                // Смена фазы крыла каждые 14 кадров
+                if (++obstacles[i].wingTimer >= 14) {
+                    obstacles[i].wingPhase ^= 1;
+                    obstacles[i].wingTimer  = 0;
+                }
+            }
+        }
+        // Удаляем вышедшие за левый край — итерируем с конца чтобы splice не сбивал индексы
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            if (obstacles[i].x + obstacles[i].w < 0) obstacles.splice(i, 1);
+        }
+
+        // Физика и жизнь частиц пыли
+        for (let i = 0; i < dustParticles.length; i++) {
+            const p = dustParticles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.1; // лёгкая гравитация
+            p.life--;
+        }
+        for (let i = dustParticles.length - 1; i >= 0; i--) {
+            if (dustParticles[i].life <= 0) dustParticles.splice(i, 1);
+        }
+
+        // Проверка столкновения
+        if (checkCollision()) gameOver();
+    }
+
+    // ---- DRAW (каждый кадр, даже на паузе/idle) ----
+    drawBackground();
+    drawGround();
+    drawDust();
+    drawObstacles();
+    drawDino();
+    drawScore();
+}
+
+
+// =====================================================================
+// ИНИЦИАЛИЗАЦИЯ
+// Рисуем статичный первый кадр до нажатия кнопки.
+// =====================================================================
+
+drawBackground();
+drawGround();
+drawDino();
+drawScore();
+
+// Позиционируем оверлей точно поверх canvas
+overlay.style.cssText =
+    'top:'    + canvas.offsetTop    + 'px;' +
+    'left:'   + canvas.offsetLeft   + 'px;' +
+    'width:'  + canvas.offsetWidth  + 'px;' +
+    'height:' + canvas.offsetHeight + 'px;';
+overlay.classList.remove('hidden');
+</script>
+</body>
+</html>

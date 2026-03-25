@@ -1,834 +1,1054 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PP — Башня Маны</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-    <!-- В проекте: <link rel="stylesheet" href="../style.css"> <script src="../navbar.js"></script> -->
-    <style>
-        /* =====================================================================
-           CSS-ПЕРЕМЕННЫЕ — тема меняется JS-ом через data-era на <body>
-           ===================================================================== */
-        :root {
-            --bg1: #0a1a0a; --bg2: #0d2a0d; --bg3: #1a3a0a; /* лес */
-            --accent: #4dff91; --accent2: #2acc6a;
-            --tower: #3a6a2a; --tower2: #2a4a1a;
-            --orb: #88ffcc; --orb2: #44ddaa; --orb-glow: #44ffaa;
-            --panel: rgba(5,20,5,0.85);
-            --border: #2a5a2a;
-            --text: #a0ffb0; --text2: #5aaa6a;
-            --star: rgba(100,255,150,0.6);
-        }
-        body[data-era="mountains"] {
-            --bg1: #0a0a20; --bg2: #101030; --bg3: #1a1a40;
-            --accent: #88aaff; --accent2: #4466dd;
-            --tower: #3a3a7a; --tower2: #252560;
-            --orb: #aabbff; --orb2: #6688ee; --orb-glow: #88aaff;
-            --panel: rgba(5,5,25,0.88);
-            --border: #2a2a6a;
-            --text: #b0c0ff; --text2: #6677cc;
-            --star: rgba(150,170,255,0.6);
-        }
-        body[data-era="cosmos"] {
-            --bg1: #050510; --bg2: #080818; --bg3: #0f0f28;
-            --accent: #ff88ff; --accent2: #cc44cc;
-            --tower: #4a1a5a; --tower2: #2a0a3a;
-            --orb: #ffbbff; --orb2: #dd88ff; --orb-glow: #ff99ff;
-            --panel: rgba(10,5,20,0.90);
-            --border: #5a1a6a;
-            --text: #ffccff; --text2: #bb66cc;
-            --star: rgba(255,180,255,0.7);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP — Башня Маны</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   CSS-ПЕРЕМЕННЫЕ — тема переключается через data-era
+   ══════════════════════════════════════════════════════ */
+:root {
+    /* ЭПОХА 1: Туманное болото */
+    --sky0: #060e08; --sky1: #0c1f10; --sky2: #122818;
+    --fog: rgba(30,80,40,0.18);
+    --glow: #3dff7a; --glow2: #1fcc55;
+    --orb-a: #52ff96; --orb-b: #1aee62; --orb-c: #0a7a32;
+    --panel-bg: rgba(4,12,6,0.92);
+    --panel-border: #1a4a22;
+    --accent: #3dff7a; --accent2: #1fcc55;
+    --text: #8fffa8; --text-dim: #3a7a4a;
+    --tower-top: #1a4a1e; --tower-mid: #112e14; --tower-dark: #0a1e0c;
+    --window-glow: #52ff96;
+    --particle: 61,255,122;
+}
+body[data-era="deep"] {
+    /* ЭПОХА 2: Бездна — синяя тьма, почти нет света */
+    --sky0: #02020e; --sky1: #050520; --sky2: #08082e;
+    --fog: rgba(10,10,80,0.22);
+    --glow: #5577ff; --glow2: #3355dd;
+    --orb-a: #88aaff; --orb-b: #4466ee; --orb-c: #111a66;
+    --panel-bg: rgba(2,2,18,0.94);
+    --panel-border: #1a1a5a;
+    --accent: #6688ff; --accent2: #4455cc;
+    --text: #aabbff; --text-dim: #3a3a8a;
+    --tower-top: #1a1a5a; --tower-mid: #0f0f3c; --tower-dark: #080828;
+    --window-glow: #88aaff;
+    --particle: 100,120,255;
+}
+body[data-era="void"] {
+    /* ЭПОХА 3: Разрыв — пурпурный хаос, реальность трещит */
+    --sky0: #0a000f; --sky1: #18002a; --sky2: #280040;
+    --fog: rgba(120,0,180,0.14);
+    --glow: #ee44ff; --glow2: #aa00dd;
+    --orb-a: #ff88ff; --orb-b: #dd44ff; --orb-c: #5a005a;
+    --panel-bg: rgba(10,0,18,0.95);
+    --panel-border: #4a006a;
+    --accent: #ee44ff; --accent2: #aa00dd;
+    --text: #ffaaff; --text-dim: #6a006a;
+    --tower-top: #3a005a; --tower-mid: #250040; --tower-dark: #12002a;
+    --window-glow: #ff88ff;
+    --particle: 220,60,255;
+}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ══════════════════════════════════════════════════════
+   RESET & BODY
+   ══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            background: var(--bg1);
-            color: var(--text);
-            font-family: 'VT323', monospace;
-            min-height: 100vh;
-            overflow-x: hidden;
-            transition: background 1.5s ease;
-        }
+body {
+    background: var(--sky0);
+    color: var(--text);
+    font-family: 'IM Fell English', serif;
+    min-height: 100vh;
+    overflow: hidden;
+    transition: background 2s ease, color 1s ease;
+}
 
-        /* ---- Навбар ---- */
-        #main-nav {
-            display: flex; gap: 6px;
-            padding: 10px 16px;
-            position: relative; z-index: 20; width: 100%;
-        }
-        #main-nav button {
-            border: 2px solid var(--border); background: transparent;
-            font-size: 14px; padding: 6px 12px;
-            cursor: pointer; font-family: inherit;
-            color: var(--text); transition: background 0.2s;
-        }
-        #main-nav button:hover { background: rgba(255,255,255,0.06); }
-        #main-nav button a { text-decoration: none; color: inherit; }
+/* ══════════════════════════════════════════════════════
+   СЛОИ ФОНА
+   ══════════════════════════════════════════════════════ */
+#bgCanvas {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+    transition: opacity 1s;
+}
 
-        /* ---- Основной лейаут ---- */
-        #app {
-            display: grid;
-            grid-template-columns: 220px 1fr 240px;
-            grid-template-rows: auto 1fr;
-            min-height: calc(100vh - 46px);
-            gap: 0;
-        }
+/* Туман — CSS-слой поверх canvas, цвет меняется с эрой */
+#fog-layer {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse 120% 40% at 50% 100%, var(--fog) 0%, transparent 70%);
+    transition: background 2s ease;
+}
 
-        /* ---- Canvas фон — на всю страницу под всем ---- */
-        #bgCanvas {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 0; pointer-events: none;
-        }
+/* ══════════════════════════════════════════════════════
+   НАВБАР
+   ══════════════════════════════════════════════════════ */
+#main-nav {
+    position: relative; z-index: 30;
+    display: flex; gap: 6px; padding: 10px 16px;
+    border-bottom: 1px solid var(--panel-border);
+    background: var(--panel-bg);
+    transition: background 2s, border-color 1s;
+}
+#main-nav button {
+    border: 1px solid var(--panel-border); background: transparent;
+    font-size: 13px; padding: 5px 11px; cursor: pointer;
+    font-family: 'IM Fell English', serif; color: var(--text-dim);
+    transition: color 0.2s, border-color 0.2s;
+}
+#main-nav button:hover { color: var(--accent); border-color: var(--accent); }
+#main-nav button a { text-decoration: none; color: inherit; }
 
-        /* ---- Панели (левая статистика и правый магазин) ---- */
-        .panel {
-            position: relative; z-index: 10;
-            background: var(--panel);
-            border-right: 2px solid var(--border);
-            padding: 16px 12px;
-            display: flex; flex-direction: column; gap: 10px;
-            transition: background 1.5s, border-color 1.5s;
-        }
-        .panel.right { border-right: none; border-left: 2px solid var(--border); }
+/* ══════════════════════════════════════════════════════
+   ЛЕЙАУТ
+   ══════════════════════════════════════════════════════ */
+#app {
+    position: relative; z-index: 10;
+    display: grid;
+    grid-template-columns: 210px 1fr 230px;
+    height: calc(100vh - 43px);
+}
 
-        .panel-title {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 9px; color: var(--accent);
-            letter-spacing: 2px; text-align: center;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-            text-shadow: 0 0 8px var(--orb-glow);
-        }
+/* ══════════════════════════════════════════════════════
+   БОКОВЫЕ ПАНЕЛИ
+   ══════════════════════════════════════════════════════ */
+.panel {
+    background: var(--panel-bg);
+    border-right: 1px solid var(--panel-border);
+    padding: 18px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    overflow-y: auto;
+    transition: background 2s, border-color 1s;
+}
+.panel.right { border-right: none; border-left: 1px solid var(--panel-border); }
 
-        /* ---- Статистика ---- */
-        .stat-row {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 16px; color: var(--text2);
-        }
-        .stat-row span { color: var(--accent); font-size: 18px; }
+/* Скроллбар стилизован */
+.panel::-webkit-scrollbar { width: 4px; }
+.panel::-webkit-scrollbar-track { background: transparent; }
+.panel::-webkit-scrollbar-thumb { background: var(--panel-border); }
 
-        /* ---- Полоска маны ---- */
-        #mana-bar-wrap {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid var(--border);
-            height: 14px; position: relative; overflow: hidden;
-        }
-        #mana-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent2), var(--accent));
-            width: 0%; transition: width 0.15s linear;
-            box-shadow: 0 0 6px var(--orb-glow);
-        }
-        #mana-label {
-            position: absolute; top: 0; left: 0; right: 0;
-            text-align: center; font-size: 11px; line-height: 14px;
-            color: #fff; font-family: 'Press Start 2P', monospace;
-            text-shadow: 0 0 4px #000;
-        }
+.panel-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px; color: var(--accent);
+    letter-spacing: 3px; text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--panel-border);
+    text-shadow: 0 0 10px var(--glow);
+    transition: color 1s, text-shadow 1s;
+}
 
-        /* ---- Центральная зона ---- */
-        #center {
-            position: relative; z-index: 10;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: flex-end;
-            padding-bottom: 30px;
-            gap: 0;
-            cursor: pointer; user-select: none;
-        }
+/* ══════════════════════════════════════════════════════
+   ПОЛОСКА МАНЫ — витражный стиль
+   ══════════════════════════════════════════════════════ */
+#mana-bar-wrap {
+    position: relative; height: 18px;
+    border: 1px solid var(--panel-border);
+    background: rgba(0,0,0,0.5); overflow: hidden;
+    transition: border-color 1s;
+}
+/* Сетка-"витраж" поверх бара */
+#mana-bar-wrap::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 1px,
+        transparent 1px, transparent 14px);
+    pointer-events: none; z-index: 2;
+}
+#mana-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--orb-c), var(--orb-b), var(--orb-a));
+    box-shadow: 0 0 8px var(--glow);
+    transition: width 0.12s linear, background 2s, box-shadow 1s;
+}
+#mana-text {
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: #fff;
+    text-shadow: 0 0 4px #000, 0 0 8px var(--glow);
+}
 
-        /* ---- Сфера маны ---- */
-        #orb-wrap {
-            position: relative;
-            width: 110px; height: 110px;
-            margin-bottom: -10px;
-            z-index: 12;
-            filter: drop-shadow(0 0 18px var(--orb-glow));
-            transition: filter 0.3s;
-        }
-        #orb-wrap:hover { filter: drop-shadow(0 0 28px var(--orb-glow)); }
-        #orb-wrap:active { transform: scale(0.93); }
+/* ══════════════════════════════════════════════════════
+   СТРОКИ СТАТИСТИКИ
+   ══════════════════════════════════════════════════════ */
+.stat-row {
+    display: flex; justify-content: space-between;
+    font-size: 15px; color: var(--text-dim);
+    padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.stat-row b { color: var(--accent); font-style: normal; font-weight: normal; }
 
-        #orbCanvas { display: block; cursor: pointer; }
+#era-name {
+    margin-top: auto; padding-top: 10px;
+    border-top: 1px solid var(--panel-border);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: var(--accent2);
+    text-align: center; letter-spacing: 2px;
+    text-shadow: 0 0 6px var(--glow2);
+    transition: color 1s, text-shadow 1s;
+}
 
-        /* ---- Башня (SVG пиксельная) ---- */
-        #tower-wrap {
-            position: relative; z-index: 11;
-            image-rendering: pixelated;
-        }
-        #towerCanvas { display: block; image-rendering: pixelated; }
+/* ══════════════════════════════════════════════════════
+   ЦЕНТРАЛЬНАЯ ЗОНА
+   ══════════════════════════════════════════════════════ */
+#center {
+    position: relative;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    padding-bottom: 20px;
+    overflow: hidden;
+}
 
-        /* ---- Всплывающий +N при клике ---- */
-        .float-text {
-            position: fixed;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 13px;
-            color: var(--accent);
-            text-shadow: 0 0 8px var(--orb-glow);
-            pointer-events: none;
-            z-index: 100;
-            animation: floatUp 0.9s ease-out forwards;
-        }
-        @keyframes floatUp {
-            0%   { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-60px) scale(0.7); }
-        }
+/* ══════════════════════════════════════════════════════
+   СФЕРА
+   ══════════════════════════════════════════════════════ */
+#orb-zone {
+    position: relative; z-index: 12;
+    margin-bottom: -14px;
+    cursor: pointer;
+    filter: drop-shadow(0 0 20px var(--glow));
+    transition: filter 0.4s;
+}
+#orb-zone:hover { filter: drop-shadow(0 0 36px var(--glow)) drop-shadow(0 0 60px var(--glow2)); }
+#orbCanvas { display: block; }
 
-        /* ---- Флэш клика на сфере ---- */
-        @keyframes orbPulse {
-            0%   { transform: scale(1); }
-            40%  { transform: scale(1.10); }
-            100% { transform: scale(1); }
-        }
-        .orb-click { animation: orbPulse 0.18s ease-out; }
+/* Пульс при клике */
+@keyframes orbClick {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.12); }
+    100% { transform: scale(1); }
+}
+.orb-pulse { animation: orbClick 0.2s ease-out; }
 
-        /* ---- Магазин ---- */
-        .shop-item {
-            background: rgba(0,0,0,0.35);
-            border: 1px solid var(--border);
-            padding: 8px 8px 7px;
-            cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
-            position: relative;
-        }
-        .shop-item:hover:not(.disabled) {
-            border-color: var(--accent);
-            background: rgba(255,255,255,0.05);
-        }
-        .shop-item.disabled { opacity: 0.4; cursor: not-allowed; }
+/* ══════════════════════════════════════════════════════
+   БАШНЯ
+   ══════════════════════════════════════════════════════ */
+#towerCanvas {
+    display: block;
+    image-rendering: pixelated;
+    position: relative; z-index: 11;
+}
 
-        .shop-item-name {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 7px; color: var(--accent);
-            margin-bottom: 3px; display: block;
-        }
-        .shop-item-desc {
-            font-size: 13px; color: var(--text2);
-            line-height: 1.2; display: block; margin-bottom: 4px;
-        }
-        .shop-item-footer {
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .shop-item-cost {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 7px; color: var(--orb2);
-        }
-        .shop-item-lvl {
-            font-size: 13px; color: var(--text2);
-        }
+/* ══════════════════════════════════════════════════════
+   ВСПЛЫВАЮЩИЕ ЧИСЛА
+   ══════════════════════════════════════════════════════ */
+.pop {
+    position: fixed;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px; color: var(--accent);
+    text-shadow: 0 0 8px var(--glow);
+    pointer-events: none; z-index: 200;
+    white-space: nowrap;
+    animation: popFloat 0.85s cubic-bezier(0.2,0.8,0.4,1) forwards;
+}
+@keyframes popFloat {
+    0%   { opacity: 1; transform: translateY(0) scale(1.1); }
+    60%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-55px) scale(0.8); }
+}
 
-        /* ---- Плашка эры ---- */
-        #era-badge {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 7px; color: var(--accent2);
-            text-align: center; letter-spacing: 1px;
-            padding: 4px 0;
-            border-top: 1px solid var(--border);
-            margin-top: auto;
-        }
+/* ══════════════════════════════════════════════════════
+   МАГАЗИН
+   ══════════════════════════════════════════════════════ */
+.shop-section-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: var(--text-dim);
+    letter-spacing: 2px; padding: 6px 0 4px;
+    text-transform: uppercase;
+}
 
-        /* ---- Уведомление о смене эры ---- */
-        #era-notify {
-            position: fixed; top: 80px; left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Press Start 2P', monospace;
-            font-size: 11px; color: #fff;
-            background: var(--panel);
-            border: 2px solid var(--accent);
-            padding: 12px 22px;
-            z-index: 200;
-            text-align: center; line-height: 1.7;
-            box-shadow: 0 0 30px var(--orb-glow);
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s;
-        }
-        #era-notify.show { opacity: 1; }
-    </style>
+.shop-item {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border);
+    padding: 7px 8px 6px;
+    cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 4px;
+}
+/* Витражная полоска слева — цвет по типу */
+.shop-item::before {
+    content: ''; position: absolute;
+    left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--accent2); opacity: 0.7;
+    transition: background 1s;
+}
+.shop-item[data-type="click"]::before { background: #ffaa44; opacity: 0.7; }
+.shop-item[data-type="cap"]::before   { background: #aa44ff; opacity: 0.7; }
+
+.shop-item:hover:not(.locked) {
+    border-color: var(--accent);
+    background: rgba(255,255,255,0.04);
+}
+.shop-item.locked { opacity: 0.38; cursor: not-allowed; }
+.shop-item.maxed  { opacity: 0.5;  cursor: default; }
+
+.item-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: var(--accent);
+    display: block; margin-bottom: 3px;
+    text-shadow: 0 0 6px var(--glow);
+    transition: color 1s, text-shadow 1s;
+}
+.item-desc { font-size: 13px; color: var(--text-dim); display: block; margin-bottom: 5px; line-height: 1.25; }
+.item-footer { display: flex; justify-content: space-between; align-items: center; }
+.item-cost {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: var(--glow);
+    text-shadow: 0 0 4px var(--glow);
+}
+.item-lvl { font-size: 12px; color: var(--text-dim); }
+
+/* ══════════════════════════════════════════════════════
+   УВЕДОМЛЕНИЕ О СМЕНЕ ЭРЫ
+   ══════════════════════════════════════════════════════ */
+#era-flash {
+    position: fixed; inset: 0; z-index: 500;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0);
+    pointer-events: none;
+    transition: background 0.4s;
+}
+#era-flash.show { background: rgba(0,0,0,0.7); pointer-events: all; }
+#era-flash-inner {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px; color: var(--accent);
+    text-shadow: 0 0 20px var(--glow), 0 0 40px var(--glow2);
+    text-align: center; line-height: 2.2;
+    border: 1px solid var(--accent);
+    padding: 28px 40px;
+    background: var(--panel-bg);
+    box-shadow: 0 0 40px var(--glow2), inset 0 0 30px rgba(0,0,0,0.8);
+    opacity: 0; transform: scale(0.85);
+    transition: opacity 0.4s, transform 0.4s;
+}
+#era-flash.show #era-flash-inner { opacity: 1; transform: scale(1); }
+
+/* Декоративные "трещины" на экране при смене эры — CSS анимация */
+@keyframes crackAppear {
+    0%   { opacity: 0; }
+    20%  { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+.crack {
+    position: fixed; pointer-events: none; z-index: 499;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--glow);
+    animation: crackAppear 1.2s ease-out forwards;
+}
+</style>
 </head>
 <body data-era="forest">
 
-<!-- Фон -->
 <canvas id="bgCanvas"></canvas>
+<div id="fog-layer"></div>
+<div id="era-flash"><div id="era-flash-inner"></div></div>
 
-<!-- Навбар -->
 <nav id="main-nav">
     <button><a href="../index.html">Главная</a></button>
     <button><a href="../gamehub.html">Игры</a></button>
     <button><a href="../profile.html">Профиль</a></button>
 </nav>
 
-<!-- Уведомление смены эры -->
-<div id="era-notify"></div>
-
 <div id="app">
 
-    <!-- ===== ЛЕВАЯ ПАНЕЛЬ — СТАТИСТИКА ===== -->
+    <!-- ══ ЛЕВАЯ ПАНЕЛЬ — СТАТУС ══ -->
     <aside class="panel">
-        <div class="panel-title">✦ СТАТУС ✦</div>
+        <div class="panel-title">⟡ МАНА ⟡</div>
 
         <div id="mana-bar-wrap">
             <div id="mana-bar"></div>
-            <div id="mana-label">0 / 1 000</div>
+            <div id="mana-text">0 / 1 000</div>
         </div>
 
-        <div class="stat-row">МАНА <span id="stat-mana">0</span></div>
-        <div class="stat-row">ЛИМИТ <span id="stat-cap">1 000</span></div>
-        <div class="stat-row">КЛИ/КЛК <span id="stat-click">1</span></div>
-        <div class="stat-row">АВТО/СЕК <span id="stat-auto">0</span></div>
-        <div class="stat-row">ВСЕГО <span id="stat-total">0</span></div>
+        <div class="stat-row">Запас      <b id="s-mana">0</b></div>
+        <div class="stat-row">Лимит      <b id="s-cap">1 000</b></div>
+        <div class="stat-row">Клик       <b id="s-click">1</b></div>
+        <div class="stat-row">Авто/сек   <b id="s-auto">0.0</b></div>
+        <div class="stat-row">Добыто     <b id="s-total">0</b></div>
 
-        <div id="era-badge">— ЭПОХА ЛЕСА —</div>
+        <div id="era-name">✦ ТУМАННОЕ БОЛОТО ✦</div>
     </aside>
 
-    <!-- ===== ЦЕНТР — БАШНЯ + СФЕРА ===== -->
+    <!-- ══ ЦЕНТР — БАШНЯ ══ -->
     <main id="center">
-        <!-- Сфера маны (кликабельная) -->
-        <div id="orb-wrap">
-            <canvas id="orbCanvas" width="110" height="110"></canvas>
+        <div id="orb-zone">
+            <canvas id="orbCanvas" width="130" height="130"></canvas>
         </div>
-        <!-- Башня -->
-        <div id="tower-wrap">
-            <canvas id="towerCanvas" width="200" height="340"></canvas>
-        </div>
+        <canvas id="towerCanvas" width="220" height="360"></canvas>
     </main>
 
-    <!-- ===== ПРАВАЯ ПАНЕЛЬ — МАГАЗИН ===== -->
+    <!-- ══ ПРАВАЯ ПАНЕЛЬ — МАГАЗИН ══ -->
     <aside class="panel right">
-        <div class="panel-title">✦ МАГАЗИН ✦</div>
-        <div id="shop-list"></div>
+        <div class="panel-title">⟡ МАГАЗИН ⟡</div>
+        <div id="shop"></div>
     </aside>
 
 </div>
 
 <script>
-// =====================================================================
-// КОНСТАНТЫ И КОНФИГ
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
+// КОНСТАНТЫ ИГРЫ
+// ════════════════════════════════════════════════════════════════════
 
-// Пороги смены эры
-const ERA_THRESHOLDS = [
-    { era: 'forest',    cap: 1_000,  label: '— ЭПОХА ЛЕСА —',    notify: 'ЭПОХА ЛЕСА' },
-    { era: 'mountains', cap: 10_000, label: '— ЭПОХА ГОР —',     notify: '✦ ЭПОХА ГОР ✦\nМана пробудила горы!' },
-    { era: 'cosmos',    cap: 100_000,label: '— ЭПОХА КОСМОСА —', notify: '✦ ЭПОХА КОСМОСА ✦\nВы достигли звёзд!' },
+// Три эры: лес/болото → бездна → разрыв реальности
+const ERAS = [
+    {
+        id:      'forest',
+        name:    '✦ ТУМАННОЕ БОЛОТО ✦',
+        notify:  ['⟡ ЭПОХА I ⟡', 'ТУМАННОЕ БОЛОТО'],
+        manaReq: 0,
+        cap:     1_000,
+    },
+    {
+        id:      'deep',
+        name:    '✦ БЕЗДНА ✦',
+        notify:  ['⟡ ЭПОХА II ⟡', 'БЕЗДНА ОТКРЫЛАСЬ'],
+        manaReq: 10_000,
+        cap:     10_000,
+    },
+    {
+        id:      'void',
+        name:    '✦ РАЗРЫВ ✦',
+        notify:  ['⟡ ЭПОХА III ⟡', 'ТКАНЬ РЕАЛЬНОСТИ\nРАЗОРВАНА'],
+        manaReq: 100_000,
+        cap:     100_000,
+    },
 ];
 
 // Товары магазина
-// type: 'auto' — пассивный доход (mana/s), 'click' — бонус к клику, 'cap' — увеличить лимит, 'visual' — апгрейд башни/сферы
-const SHOP_ITEMS = [
-    // --- Авто-добывалки ---
-    { id:'sprite',   name:'РУН. ДУХИ',    type:'auto',  desc:'Духи собирают ману\nиз воздуха',    base:30,   growth:1.6, effect:0.5,  maxLvl:20 },
-    { id:'crystal',  name:'КРИСТАЛЛ',     type:'auto',  desc:'Кристалл концентрирует\nпотоки маны', base:120,  growth:1.7, effect:3,    maxLvl:15 },
-    { id:'altar',    name:'АЛТАРЬ',       type:'auto',  desc:'Алтарь призывает ману\nиз эфира',    base:600,  growth:1.8, effect:15,   maxLvl:10 },
-    { id:'golem',    name:'ГОЛЕМ МАНЫ',   type:'auto',  desc:'Голем автоматически\nнакапливает ману', base:3000, growth:1.9, effect:80, maxLvl:8  },
-    // --- Улучшения клика ---
-    { id:'staff',    name:'ЖЕЗЛ',         type:'click', desc:'Усиливает каждый\nудар по сфере',   base:50,   growth:1.7, effect:1,    maxLvl:20 },
-    { id:'rune',     name:'РУНА СИЛЫ',    type:'click', desc:'Вплавляет руну\nмощи в ладонь',     base:250,  growth:1.8, effect:5,    maxLvl:10 },
-    { id:'arcane',   name:'ТАЙНЫЙ РИТ.',  type:'click', desc:'Ритуал умножает\nсилу клика',       base:2000, growth:2.0, effect:30,   maxLvl:6  },
-    // --- Лимит маны ---
-    { id:'vessel',   name:'СОСУД',        type:'cap',   desc:'Расширяет хранилище\nдля маны',      base:200,  growth:2.0, effect:500,  maxLvl:10 },
-    { id:'tower_up', name:'БАШНЯ+',       type:'cap',   desc:'Расширяет башню,\nувеличивает лимит',base:1500, growth:2.2, effect:5000, maxLvl:6  },
+const ITEMS = [
+    // AUTO — пассивная мана/сек
+    { id:'wisp',    type:'auto',  name:'БЛУЖДАЮЩИЙ ОГОНЬ',  desc:'Огонёк тихо собирает ману из тумана',       base:25,    grow:1.55, eff:0.4,   max:25 },
+    { id:'crystal', type:'auto',  name:'МАН. КРИСТАЛЛ',     desc:'Кристалл концентрирует потоки маны',         base:110,   grow:1.65, eff:2.5,   max:18 },
+    { id:'altar',   type:'auto',  name:'АЛТАРЬ ЭФИРА',      desc:'Алтарь непрерывно тянет ману из пустоты',    base:550,   grow:1.75, eff:14,    max:12 },
+    { id:'golem',   type:'auto',  name:'МАНОГОЛ ЕМ',        desc:'Голем перемалывает эфир в чистую ману',      base:2800,  grow:1.85, eff:75,    max:8  },
+    { id:'nexus',   type:'auto',  name:'НЕКСУС',            desc:'Нексус открывает канал в море маны',         base:18000, grow:2.0,  eff:500,   max:5  },
+    // CLICK — бонус к клику
+    { id:'staff',   type:'click', name:'ПОСОХ МАГА',        desc:'Каждый удар по сфере мощнее',                base:40,    grow:1.6,  eff:1,     max:20 },
+    { id:'sigil',   type:'click', name:'СИГИЛ СИЛЫ',        desc:'Сигил вплавлен в ладонь, усиливает клик',    base:220,   grow:1.75, eff:6,     max:12 },
+    { id:'ritual',  type:'click', name:'ЧЁРНЫЙ РИТУАЛ',     desc:'Ритуал удваивает каждый удар по сфере',      base:1800,  grow:2.0,  eff:40,    max:7  },
+    // CAP — лимит + визуал
+    { id:'vessel',  type:'cap',   name:'СОСУД ДУШ',         desc:'Расширяет хранилище маны',                   base:150,   grow:1.9,  eff:800,   max:10 },
+    { id:'spire',   type:'cap',   name:'ШПИЛЬ БАШНИ',       desc:'Надстраивает башню, увеличивает ёмкость',    base:1200,  grow:2.1,  eff:5000,  max:6  },
 ];
 
-// =====================================================================
-// ИГРОВОЕ СОСТОЯНИЕ
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
+// СОСТОЯНИЕ
+// ════════════════════════════════════════════════════════════════════
 
-const state = {
-    mana:       0,
-    cap:        1000,
-    totalMana:  0,       // всего добыто за всё время
-    clickPower: 1,       // мана за клик
-    autoRate:   0,       // мана в секунду
-    era:        0,       // индекс текущей эры (0,1,2)
-    towerLevel: 0,       // 0–5, растёт от покупок cap
-    orbLevel:   0,       // 0–3, растёт при смене эры
-    levels: Object.fromEntries(SHOP_ITEMS.map(i => [i.id, 0])),
+const G = {
+    mana:        0,
+    cap:         1000,
+    earned:      0,      // всего добыто за сессию (триггер смены эры)
+    clickPow:    1,
+    autoRate:    0,
+    era:         0,      // индекс в ERAS
+    towerLvl:    0,      // 0–8, растёт от покупок cap
+    orbLvl:      0,      // 0–3, растёт при смене эры
+    lvl: Object.fromEntries(ITEMS.map(i => [i.id, 0])),
 };
 
-// =====================================================================
-// DOM-ССЫЛКИ
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
+// CANVAS + DOM
+// ════════════════════════════════════════════════════════════════════
 
-const bgCanvas    = document.getElementById('bgCanvas');
-const bgCtx       = bgCanvas.getContext('2d');
-const orbCanvas   = document.getElementById('orbCanvas');
-const orbCtx      = orbCanvas.getContext('2d');
-const towerCanvas = document.getElementById('towerCanvas');
-const towerCtx    = towerCanvas.getContext('2d');
+const bgCvs  = document.getElementById('bgCanvas');
+const bgCtx  = bgCvs.getContext('2d');
+const orbCvs = document.getElementById('orbCanvas');
+const orbCtx = orbCvs.getContext('2d');
+const twCvs  = document.getElementById('towerCanvas');
+const twCtx  = twCvs.getContext('2d');
 
-const statMana    = document.getElementById('stat-mana');
-const statCap     = document.getElementById('stat-cap');
-const statClick   = document.getElementById('stat-click');
-const statAuto    = document.getElementById('stat-auto');
-const statTotal   = document.getElementById('stat-total');
-const manaBar     = document.getElementById('mana-bar');
-const manaLabel   = document.getElementById('mana-label');
-const eraBadge    = document.getElementById('era-badge');
-const eraNotify   = document.getElementById('era-notify');
-const shopList    = document.getElementById('shop-list');
-const orbWrap     = document.getElementById('orb-wrap');
+// DOM-элементы статистики и UI
+const sMana   = document.getElementById('s-mana');
+const sCap    = document.getElementById('s-cap');
+const sClick  = document.getElementById('s-click');
+const sAuto   = document.getElementById('s-auto');
+const sTotal  = document.getElementById('s-total');
+const manaBar = document.getElementById('mana-bar');
+const manaText= document.getElementById('mana-text');
+const eraName = document.getElementById('era-name');
+const shopEl  = document.getElementById('shop');
+const eraFlash       = document.getElementById('era-flash');
+const eraFlashInner  = document.getElementById('era-flash-inner');
 
-// =====================================================================
-// ФОНОВЫЙ CANVAS — частицы, звёзды, атмосфера
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
+// ФОН — звёзды/частицы, каждая эра меняет цвет
+// ════════════════════════════════════════════════════════════════════
 
-const bgParticles = [];
-
-function resizeBg() {
-    bgCanvas.width  = window.innerWidth;
-    bgCanvas.height = window.innerHeight;
-}
-resizeBg();
-window.addEventListener('resize', resizeBg);
-
-// Инициализируем частицы фона (общие для всех эр, цвет меняется через CSS var)
-function initParticles() {
-    bgParticles.length = 0;
-    for (let i = 0; i < 80; i++) {
-        bgParticles.push({
-            x: Math.random() * bgCanvas.width,
-            y: Math.random() * bgCanvas.height,
-            s: 1 + Math.random() * 2,
-            vy: -0.2 - Math.random() * 0.4,   // поднимаются вверх
-            vx: (Math.random() - 0.5) * 0.2,
-            life: Math.random(),               // начальная фаза мерцания
-            speed: 0.005 + Math.random() * 0.01,
-        });
-    }
-}
-initParticles();
-
-// Текущий цвет частиц (обновляется при смене эры)
-const ERA_PARTICLE_COLORS = [
-    'rgba(77,255,145,',    // лес
-    'rgba(136,170,255,',   // горы
-    'rgba(255,136,255,',   // космос
+// Параметры фона по эре
+const BG_CFG = [
+    // Болото: зелёные огоньки, низко у земли, медленно
+    { pCount:60, pR:[1,2.5], pVy:[-0.15,-0.35], pVx:[-0.2,0.2], color:[61,255,122],   starAlpha:0.3, starColor:[80,200,100] },
+    // Бездна: синие звёзды, равномерно, быстрее
+    { pCount:90, pR:[1,2],   pVy:[-0.3, -0.6],  pVx:[-0.1,0.1], color:[100,130,255],  starAlpha:0.6, starColor:[120,150,255] },
+    // Разрыв: пурпурные частицы, хаотичные
+    { pCount:120,pR:[1,3],   pVy:[-0.4, -1.0],  pVx:[-0.5,0.5], color:[220,60,255],   starAlpha:0.8, starColor:[255,100,255] },
 ];
 
-let bgTick = 0;
-function drawBg() {
-    const W = bgCanvas.width, H = bgCanvas.height;
-    bgCtx.clearRect(0, 0, W, H);
+let bgParts = []; // частицы фона
+let bgStars = []; // статичные звёзды
+let bgGrad  = null;
 
-    // Градиент неба — цвета из CSS переменных (читаем через computedStyle)
-    // Для производительности пересчитываем только при смене эры
+function rnd(a, b) { return a + Math.random() * (b - a); }
+
+function initBg() {
+    const W = bgCvs.width, H = bgCvs.height;
+    const cfg = BG_CFG[G.era];
+
+    // Частицы
+    bgParts = Array.from({ length: cfg.pCount }, () => ({
+        x:     rnd(0, W), y: rnd(0, H),
+        s:     rnd(cfg.pR[0], cfg.pR[1]),
+        vx:    rnd(cfg.pVx[0], cfg.pVx[1]),
+        vy:    rnd(cfg.pVy[0], cfg.pVy[1]),
+        phase: rnd(0, Math.PI * 2),
+        spd:   rnd(0.006, 0.02),
+    }));
+
+    // Звёзды (статичные, только мерцают)
+    bgStars = Array.from({ length: 50 }, () => ({
+        x:      rnd(0, W), y: rnd(0, H * 0.7),
+        s:      rnd(0.5, 1.5),
+        phase:  rnd(0, Math.PI * 2),
+        spd:    rnd(0.01, 0.03),
+    }));
+
+    rebuildGrad();
+}
+
+function rebuildGrad() {
+    const g = bgCtx.createLinearGradient(0, 0, 0, bgCvs.height);
+    const S = [
+        ['#060e08','#0c1f10','#152a18'],
+        ['#02020e','#050520','#09093a'],
+        ['#0a000f','#18002a','#2a0040'],
+    ][G.era];
+    g.addColorStop(0,   S[0]);
+    g.addColorStop(0.55,S[1]);
+    g.addColorStop(1,   S[2]);
+    bgGrad = g;
+}
+
+function resizeBg() {
+    bgCvs.width  = window.innerWidth;
+    bgCvs.height = window.innerHeight;
+    rebuildGrad();
+}
+resizeBg();
+window.addEventListener('resize', () => { resizeBg(); initBg(); });
+initBg();
+
+let bgFrame = 0;
+function drawBg() {
+    const W = bgCvs.width, H = bgCvs.height;
     bgCtx.fillStyle = bgGrad;
     bgCtx.fillRect(0, 0, W, H);
 
-    // Частицы-огоньки / звёзды
-    const col = ERA_PARTICLE_COLORS[state.era];
-    for (let i = 0; i < bgParticles.length; i++) {
-        const p = bgParticles[i];
-        p.life += p.speed;
-        const alpha = (0.3 + 0.7 * Math.abs(Math.sin(p.life))) * 0.7;
-        bgCtx.fillStyle = col + alpha.toFixed(2) + ')';
-        bgCtx.fillRect(p.x | 0, p.y | 0, p.s | 0, p.s | 0);
+    const cfg = BG_CFG[G.era];
+    const [cr,cg,cb] = cfg.color;
+    const [sr,sg,sb] = cfg.starColor;
 
-        p.x += p.vx; p.y += p.vy;
-        // Зацикливаем сверху вниз
-        if (p.y < -4) { p.y = H + 4; p.x = Math.random() * W; }
+    // Звёзды
+    for (let i = 0; i < bgStars.length; i++) {
+        const s = bgStars[i];
+        s.phase += s.spd;
+        const a = (cfg.starAlpha * (0.4 + 0.6 * Math.abs(Math.sin(s.phase)))).toFixed(2);
+        bgCtx.fillStyle = `rgba(${sr},${sg},${sb},${a})`;
+        bgCtx.fillRect(s.x | 0, s.y | 0, s.s | 0, s.s | 0);
     }
 
-    bgTick++;
+    // Летящие частицы
+    for (let i = 0; i < bgParts.length; i++) {
+        const p = bgParts[i];
+        p.phase += p.spd;
+        p.x += p.vx; p.y += p.vy;
+        if (p.y < -4) { p.y = H + 4; p.x = rnd(0, W); }
+        const a = (0.2 + 0.8 * Math.abs(Math.sin(p.phase))).toFixed(2);
+        bgCtx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
+        bgCtx.fillRect(p.x | 0, p.y | 0, p.s | 0, p.s | 0);
+    }
+
+    // В эпоху разрыва — случайные вспышки-трещины фона
+    if (G.era === 2 && bgFrame % 90 === 0 && Math.random() < 0.4) {
+        bgCtx.fillStyle = 'rgba(220,0,255,0.03)';
+        bgCtx.fillRect(0, 0, W, H);
+    }
+
+    bgFrame++;
 }
 
-// Предвычисленный градиент фона (пересоздаём при смене эры)
-let bgGrad = '#0a1a0a';
-function rebuildBgGrad() {
-    const g = bgCtx.createLinearGradient(0, 0, 0, bgCanvas.height);
-    const STOPS = [
-        [['#0a1a0a','#0d2a0d','#1a3a0a'], ['forest']],
-        [['#0a0a20','#101030','#1a1a40'], ['mountains']],
-        [['#050510','#080818','#0f0f28'], ['cosmos']],
-    ];
-    const stops = STOPS[state.era][0];
-    g.addColorStop(0,   stops[0]);
-    g.addColorStop(0.5, stops[1]);
-    g.addColorStop(1,   stops[2]);
-    bgGrad = g;
-}
-rebuildBgGrad();
+// ════════════════════════════════════════════════════════════════════
+// СФЕРА МАНЫ
+// ════════════════════════════════════════════════════════════════════
 
-// =====================================================================
-// СФЕРА (ORB CANVAS)
-// =====================================================================
-
-const ORB_COLORS = [
-    { body:'#88ffcc', shine:'#ccffee', core:'#44ddaa', glow:'#44ffaa' }, // лес
-    { body:'#aabbff', shine:'#ddeeff', core:'#6688ee', glow:'#88aaff' }, // горы
-    { body:'#ffbbff', shine:'#ffddff', core:'#dd88ff', glow:'#ff99ff' }, // космос
+// Цвета сферы для каждой эры
+const ORB = [
+    { hi:'#ccffe8', mid:'#52ff96', lo:'#0f5a2a', glow:'rgba(61,255,122,' },
+    { hi:'#dde8ff', mid:'#88aaff', lo:'#0a1a66', glow:'rgba(100,130,255,' },
+    { hi:'#ffd8ff', mid:'#ee66ff', lo:'#3a005a', glow:'rgba(220,60,255,' },
 ];
 
-// Анимация вращения ореола
-let orbAngle = 0;
-let orbPulse = 0; // 0→1 при клике, затем затухает
+let orbAngle = 0;   // угол вращения орбит
+let orbBurst = 0;   // 0→1 вспышка при клике, затухает
 
 function drawOrb() {
     const ctx = orbCtx;
-    const cx = 55, cy = 55, R = 42;
-    ctx.clearRect(0, 0, 110, 110);
+    const cx = 65, cy = 65;
+    // Радиус сферы растёт с уровнем орба
+    const R = 38 + G.orbLvl * 5;
+    ctx.clearRect(0, 0, 130, 130);
 
-    const col = ORB_COLORS[state.era];
-    const lvl = state.orbLevel; // 0-3 — размер и количество колец
+    const col = ORB[G.era];
 
-    // Внешнее свечение
-    const glowR = R + 10 + orbPulse * 8 + lvl * 4;
-    const grd = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, glowR);
-    grd.addColorStop(0, col.glow + 'cc');
-    grd.addColorStop(1, col.glow + '00');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, 110, 110);
+    // 1. Внешнее гало (несколько концентрических)
+    for (let gi = 3; gi >= 0; gi--) {
+        const gr = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, R + 14 + gi * 10 + orbBurst * 12);
+        const a = (0.08 - gi * 0.015).toFixed(3);
+        gr.addColorStop(0, col.glow + '0.15)');
+        gr.addColorStop(1, col.glow + '0)');
+        ctx.fillStyle = gr;
+        ctx.fillRect(0, 0, 130, 130);
+    }
 
-    // Тело сферы (пиксельный круг через fillRect)
-    // Рисуем горизонтальными полосами — pixelated стиль
+    // 2. Тело сферы — горизонтальные пиксельные полосы с затемнением по краям
     for (let y = -R; y <= R; y += 2) {
-        const hw = Math.sqrt(R * R - y * y) | 0;
-        // Градиент по строке: светлее сверху-слева
-        const bright = 0.5 + 0.5 * (-y / R); // 0..1
-        const r = parseInt(col.body.slice(1,3), 16);
-        const g = parseInt(col.body.slice(3,5), 16);
-        const b = parseInt(col.body.slice(5,7), 16);
-        const rr = Math.min(255, r * (0.6 + bright * 0.8)) | 0;
-        const gg = Math.min(255, g * (0.6 + bright * 0.8)) | 0;
-        const bb = Math.min(255, b * (0.6 + bright * 0.8)) | 0;
-        ctx.fillStyle = `rgb(${rr},${gg},${bb})`;
-        ctx.fillRect(cx - hw, cy + y, hw * 2, 2);
+        const hw  = (Math.sqrt(Math.max(0, R * R - y * y))) | 0;
+        if (hw < 1) continue;
+
+        // Освещение: снизу темнее, сверху ярче, с боков темнее (лимб)
+        const tY  = (-y / R + 1) * 0.5;               // 0 снизу, 1 сверху
+        const tX  = 0.75;                               // боковое затемнение (без x нет сильной разницы)
+        const bright = 0.3 + tY * 0.7;
+
+        // Интерполируем hi→mid→lo
+        function hexToRgb(h) {
+            return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+        }
+        const hi  = hexToRgb(col.hi);
+        const mid = hexToRgb(col.mid);
+        const lo  = hexToRgb(col.lo);
+
+        const t = bright;
+        let r, g, b;
+        if (t > 0.5) {
+            const f = (t - 0.5) * 2;
+            r = mid[0] + (hi[0] - mid[0]) * f | 0;
+            g = mid[1] + (hi[1] - mid[1]) * f | 0;
+            b = mid[2] + (hi[2] - mid[2]) * f | 0;
+        } else {
+            const f = t * 2;
+            r = lo[0] + (mid[0] - lo[0]) * f | 0;
+            g = lo[1] + (mid[1] - lo[1]) * f | 0;
+            b = lo[2] + (mid[2] - lo[2]) * f | 0;
+        }
+
+        // Лимбовое затемнение по краям строки (виньетка)
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(cx - hw, cy + y, 2, 2);       // крайний левый пиксель чуть темнее
+        ctx.fillRect(cx + hw - 2, cy + y, 2, 2);   // крайний правый
+        ctx.fillStyle = `rgb(${Math.min(255,r+15)},${Math.min(255,g+15)},${Math.min(255,b+15)})`;
+        ctx.fillRect(cx - hw + 2, cy + y, hw * 2 - 4, 2); // центр
     }
 
-    // Блик (верхний левый)
-    ctx.fillStyle = col.shine + 'cc';
-    for (let y = -R * 0.5; y <= -R * 0.05; y += 2) {
-        const hw2 = Math.sqrt(R * R - y * y) | 0;
-        const hw1 = Math.sqrt(R * R * 0.25 - Math.min(y * y, R * R * 0.25 - 1)) | 0;
-        ctx.fillRect(cx - hw2 * 0.6 | 0, cy + y | 0, (hw1 * 0.8) | 0, 2);
-    }
+    // 3. Блик (пятно верхний-левый)
+    const bgrad = ctx.createRadialGradient(cx - R*0.28, cy - R*0.28, 0, cx - R*0.2, cy - R*0.2, R * 0.5);
+    bgrad.addColorStop(0,   'rgba(255,255,255,0.35)');
+    bgrad.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+    bgrad.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.fillStyle = bgrad;
+    ctx.fillRect(cx - R, cy - R, R * 2, R * 2); // ограничиваем зоной сферы (приближение)
 
-    // Вращающиеся кольца-орбиты (растут с уровнем)
-    const rings = Math.min(lvl + 1, 3);
+    // 4. Вращающиеся орбиты (количество = orbLvl+1, макс 4)
+    const rings = Math.min(G.orbLvl + 1, 4);
     ctx.save();
     ctx.translate(cx, cy);
     for (let ri = 0; ri < rings; ri++) {
         ctx.save();
-        ctx.rotate(orbAngle * (1 + ri * 0.4) + ri * Math.PI / rings);
-        const orbitR = R + 6 + ri * 8;
-        // Рисуем эллипс как пиксельные точки
-        ctx.strokeStyle = col.glow + (ri === 0 ? 'aa' : '66');
-        ctx.lineWidth = 2;
+        const rAngle = orbAngle * (1 + ri * 0.35) + ri * (Math.PI * 0.6);
+        ctx.rotate(rAngle);
+        const orR = R + 8 + ri * 10;
+        const ell = orR * (0.22 + ri * 0.04); // вертикальный радиус эллипса
+        ctx.strokeStyle = col.glow + (ri === 0 ? '0.7)' : '0.35)');
+        ctx.lineWidth = ri === 0 ? 2 : 1;
         ctx.beginPath();
-        ctx.ellipse(0, 0, orbitR, orbitR * 0.3, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, orR, ell, 0, 0, Math.PI * 2);
         ctx.stroke();
+
+        // Маленький огонёк на орбите
+        const px = orR * Math.cos(orbAngle * 2 + ri);
+        const py = ell * Math.sin(orbAngle * 2 + ri);
+        ctx.fillStyle = col.glow + '0.9)';
+        ctx.fillRect(px - 2 | 0, py - 2 | 0, 4, 4);
         ctx.restore();
     }
     ctx.restore();
 
-    // Пульс при клике затухает
-    if (orbPulse > 0) orbPulse -= 0.08;
+    // Затухаем вспышку
+    if (orbBurst > 0) orbBurst = Math.max(0, orbBurst - 0.07);
 }
 
-// =====================================================================
-// БАШНЯ (TOWER CANVAS)
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
+// БАШНЯ
+// ════════════════════════════════════════════════════════════════════
 
 // Цвета башни по эре
-const TOWER_ERA_COLORS = [
-    { main:'#3a6a2a', dark:'#2a4a1a', accent:'#4dff91', window:'#88ffcc', roof:'#2a5a1a' },  // лес
-    { main:'#3a3a7a', dark:'#252560', accent:'#88aaff', window:'#aabbff', roof:'#2a2a6a' },  // горы
-    { main:'#4a1a5a', dark:'#2a0a3a', accent:'#ff88ff', window:'#ffbbff', roof:'#3a0a4a' },  // космос
+const TW = [
+    { stone:'#1e4a1e', dark:'#102a10', vdark:'#091509', win:'#52ff96', spire:'#3dff7a', light:'rgba(61,255,122,0.15)' },
+    { stone:'#1a1a5a', dark:'#0f0f3a', vdark:'#080828', win:'#88aaff', spire:'#5577ff', light:'rgba(100,130,255,0.15)' },
+    { stone:'#3a1050', dark:'#220836', vdark:'#10041e', win:'#ff88ff', spire:'#ee44ff', light:'rgba(220,60,255,0.15)' },
 ];
+let twDirty = true;
 
 function drawTower() {
-    const ctx = towerCtx;
-    const W = 200, H = 340;
-    ctx.clearRect(0, 0, W, H);
+    const ctx = twCtx;
+    const TW_W = 220, TW_H = 360;
+    ctx.clearRect(0, 0, TW_W, TW_H);
 
-    const col  = TOWER_ERA_COLORS[state.era];
-    const lvl  = Math.min(state.towerLevel, 5); // 0–5
+    const c   = TW[G.era];
+    const lvl = Math.min(G.towerLvl, 8);
 
-    // Базовое основание башни
-    const bw = 80 + lvl * 8;   // ширина основания растёт
-    const bx = (W - bw) / 2;
-    const baseH = 180 + lvl * 12;
-    const baseY = H - baseH;
+    // === ОСНОВАНИЕ БАШНИ ===
+    const bw  = 90 + lvl * 7;      // ширина тела
+    const bx  = (TW_W - bw) / 2 | 0;
+    const bh  = 200 + lvl * 12;    // высота тела
+    const by  = TW_H - bh;
 
-    // Тень башни
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(bx + 6, baseY + 6, bw, baseH);
+    // Тень
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(bx + 8, by + 8, bw, bh);
 
-    // Тело башни
-    // Нижняя секция (толще)
-    ctx.fillStyle = col.dark;
-    ctx.fillRect(bx, baseY, bw, baseH);
-    ctx.fillStyle = col.main;
-    ctx.fillRect(bx + 2, baseY + 2, bw - 4, baseH - 4);
+    // Каменное тело
+    ctx.fillStyle = c.vdark;
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = c.dark;
+    ctx.fillRect(bx + 2, by + 2, bw - 4, bh - 4);
+    ctx.fillStyle = c.stone;
+    ctx.fillRect(bx + 4, by + 4, bw - 8, bh - 8);
 
-    // Каменный узор (горизонтальные швы)
-    ctx.fillStyle = col.dark;
-    for (let sy = baseY + 20; sy < H - 10; sy += 20) {
-        ctx.fillRect(bx + 2, sy, bw - 4, 2);
+    // Каменная кладка — горизонтальные швы
+    ctx.fillStyle = c.dark;
+    for (let sy = by + 18; sy < TW_H - 4; sy += 18) {
+        ctx.fillRect(bx + 4, sy, bw - 8, 2);
     }
-    // Вертикальные швы (смещаются через ряд)
-    for (let sy = baseY + 20, row = 0; sy < H - 10; sy += 20, row++) {
-        const offset = row % 2 === 0 ? 0 : 20;
-        for (let sx = bx + 2 + offset; sx < bx + bw - 4; sx += 40) {
-            ctx.fillRect(sx, sy, 2, 18);
+    // Вертикальные швы (кирпичи в шахматном порядке)
+    for (let sy = by + 18, row = 0; sy < TW_H - 4; sy += 18, row++) {
+        const shift = (row % 2) * 20;
+        for (let sx = bx + 4 + shift; sx < bx + bw - 4; sx += 40) {
+            ctx.fillRect(sx, sy - 14, 2, 14);
         }
     }
 
-    // Окна (количество растёт с уровнем)
-    const winCount = 1 + Math.floor(lvl / 2);
-    const winW = 12, winH = 16;
-    ctx.fillStyle = col.window;
-    for (let wi = 0; wi < winCount; wi++) {
-        const wx = bx + bw / 2 - (winCount * 20) / 2 + wi * 20 - winW / 2;
-        // Нижний ряд окон
-        ctx.fillRect(wx | 0, H - 50, winW, winH);
-        // Верхний ряд (если уровень > 2)
-        if (lvl > 2) ctx.fillRect(wx | 0, H - 100, winW, winH);
-        // Свет в окне
-        ctx.fillStyle = col.accent + '88';
-        ctx.fillRect((wx + 2) | 0, H - 48, winW - 4, winH - 4);
-        if (lvl > 2) ctx.fillRect((wx + 2) | 0, H - 98, winW - 4, winH - 4);
-        ctx.fillStyle = col.window;
+    // === ВИТРАЖНЫЕ ОКНА ===
+    // Готический стиль: арочные окна с крестом внутри
+    const winRows  = 1 + Math.floor(lvl / 3);          // количество рядов
+    const winCols  = 1 + Math.floor(lvl / 2);          // окна в ряду
+    const winW     = 12, winH = 20;
+    const totalW   = winCols * (winW + 8) - 8;
+    const startX   = bx + (bw - totalW) / 2 | 0;
+
+    for (let row = 0; row < winRows; row++) {
+        const wy = TW_H - 55 - row * 60;
+        for (let col = 0; col < winCols; col++) {
+            const wx = startX + col * (winW + 8);
+            // Рамка окна
+            ctx.fillStyle = c.vdark;
+            ctx.fillRect(wx - 2, wy - 2, winW + 4, winH + 4);
+            // Свечение внутри
+            ctx.fillStyle = c.win + '33';
+            ctx.fillRect(wx, wy, winW, winH);
+            // Крест в окне
+            ctx.fillStyle = c.dark;
+            ctx.fillRect(wx + winW / 2 - 1 | 0, wy, 2, winH);     // вертикаль
+            ctx.fillRect(wx, wy + winH * 0.4 | 0, winW, 2);        // горизонталь
+            // Свечение окна наружу
+            ctx.fillStyle = c.light;
+            ctx.fillRect(wx - 6, wy - 4, winW + 12, winH + 8);
+        }
     }
 
-    // Верхняя часть башни (сужается)
-    const topW = bw * 0.7 | 0;
-    const topX = (W - topW) / 2 | 0;
-    const topH = 40 + lvl * 6;
-    const topY = baseY - topH;
-    ctx.fillStyle = col.dark;
-    ctx.fillRect(topX, topY, topW, topH + 4);
-    ctx.fillStyle = col.main;
-    ctx.fillRect(topX + 2, topY + 2, topW - 4, topH);
+    // === ВЕРХНЯЯ СЕКЦИЯ (сужение) ===
+    const tw  = bw * 0.65 | 0;
+    const tx  = (TW_W - tw) / 2 | 0;
+    const th  = 50 + lvl * 5;
+    const tby = by - th;
 
-    // Зубцы на верхушке (мерлоны)
-    const merW = 10, merH = 14;
-    const merCount = Math.floor(topW / (merW + 4));
-    const merOffset = (topW - merCount * (merW + 4)) / 2;
-    ctx.fillStyle = col.main;
-    for (let mi = 0; mi < merCount; mi++) {
-        ctx.fillRect(topX + merOffset + mi * (merW + 4), topY - merH, merW, merH);
+    ctx.fillStyle = c.vdark;
+    ctx.fillRect(tx, tby, tw, th + 4);
+    ctx.fillStyle = c.dark;
+    ctx.fillRect(tx + 2, tby + 2, tw - 4, th);
+    ctx.fillStyle = c.stone;
+    ctx.fillRect(tx + 4, tby + 4, tw - 8, th - 2);
+
+    // === ЗУБЦЫ (мерлоны) ===
+    const mW = 9, mH = 14;
+    const mCount = Math.floor(tw / (mW + 4)) | 0;
+    const mOff   = (tw - mCount * (mW + 4)) / 2;
+    for (let mi = 0; mi < mCount; mi++) {
+        const mx = tx + mOff + mi * (mW + 4);
+        ctx.fillStyle = c.stone;
+        ctx.fillRect(mx | 0, tby - mH, mW, mH);
+        ctx.fillStyle = c.dark;
+        ctx.fillRect(mx + 1 | 0, tby - mH + 1, mW - 2, mH - 2);
     }
 
-    // Шпиль
-    const spireW = 8 + lvl * 2;
-    const spireH = 50 + lvl * 10;
-    const spireX = (W - spireW) / 2 | 0;
-    const spireY = topY - spireH;
-    // Шпиль сужается к верху
-    for (let sy = 0; sy < spireH; sy += 2) {
-        const sw = spireW * (1 - sy / spireH);
-        const sx = (W - sw) / 2;
-        ctx.fillStyle = sy < spireH * 0.3 ? col.accent : col.roof;
-        ctx.fillRect(sx | 0, spireY + sy, sw | 0, 2);
+    // === ШПИЛЬ ===
+    const spW   = 10 + lvl * 2;
+    const spH   = 60 + lvl * 15;
+    const spX   = (TW_W - spW) / 2 | 0;
+    const spTop = tby - spH;
+
+    // Тело шпиля — сужается
+    for (let sy = 0; sy < spH; sy += 2) {
+        const t   = sy / spH;            // 0 = верх, 1 = низ
+        const sw  = spW * (0.15 + 0.85 * t) | 0;
+        const sx  = (TW_W - sw) / 2 | 0;
+        ctx.fillStyle = t < 0.15 ? c.spire : (t < 0.5 ? c.dark : c.stone);
+        ctx.fillRect(sx, spTop + sy, sw, 2);
     }
 
-    // Свечение на шпиле
-    ctx.fillStyle = col.accent + '44';
-    ctx.fillRect((W / 2 - 10) | 0, spireY - 8, 20, 20);
+    // Свечение острия шпиля
+    ctx.fillStyle = c.light;
+    ctx.fillRect((TW_W / 2 - 12) | 0, spTop - 10, 24, 24);
+    ctx.fillStyle = c.spire + 'cc';
+    ctx.fillRect((TW_W / 2 - 3) | 0, spTop - 4, 6, 8);
+
+    // === АУРА БАШНИ — световой луч снизу ===
+    const aGrad = ctx.createLinearGradient(0, TW_H - 40, 0, by);
+    aGrad.addColorStop(0, c.light.replace('0.15', '0'));
+    aGrad.addColorStop(0.5, c.light);
+    aGrad.addColorStop(1, c.light.replace('0.15', '0'));
+    ctx.fillStyle = aGrad;
+    ctx.fillRect(bx | 0, by, bw, bh);
 }
 
-// =====================================================================
-// ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ
-// =====================================================================
-
-let lastAuto = performance.now();
-let frame    = 0;
-
-function loop() {
-    requestAnimationFrame(loop);
-    frame++;
-
-    // Авто-добыча маны (раз в мс, не привязываем к fps)
-    const now = performance.now();
-    const dt  = (now - lastAuto) / 1000; // секунды
-    lastAuto  = now;
-
-    if (state.autoRate > 0) {
-        addMana(state.autoRate * dt);
-    }
-
-    // Вращение ореола сферы
-    orbAngle += 0.012;
-
-    // Рисуем каждый кадр
-    drawBg();
-    drawOrb();
-    // Башню ререндерим только при изменениях (флаг)
-    if (towerDirty) { drawTower(); towerDirty = false; }
-}
-
-let towerDirty = true; // при старте нужно нарисовать
-
-// =====================================================================
-// КЛИК ПО СФЕРЕ
-// =====================================================================
-
-orbCanvas.addEventListener('pointerdown', e => {
-    e.stopPropagation();
-    onOrbClick(e.clientX, e.clientY);
-});
-
-function onOrbClick(cx, cy) {
-    addMana(state.clickPower);
-    orbPulse = 1;
-
-    // Всплывающий текст +N
-    const el = document.createElement('div');
-    el.className = 'float-text';
-    el.textContent = '+' + fmt(state.clickPower);
-    el.style.left = (cx - 20) + 'px';
-    el.style.top  = (cy - 10) + 'px';
-    document.body.appendChild(el);
-    el.addEventListener('animationend', () => el.remove());
-}
-
-// =====================================================================
-// МАНА
-// =====================================================================
-
-function addMana(amount) {
-    state.mana      = Math.min(state.cap, state.mana + amount);
-    state.totalMana += amount;
-    updateUI();
-    checkEra();
-}
-
-function updateUI() {
-    const m = state.mana | 0;
-    statMana.textContent  = fmt(m);
-    statCap.textContent   = fmt(state.cap);
-    statClick.textContent = fmt(state.clickPower);
-    statAuto.textContent  = state.autoRate.toFixed(1);
-    statTotal.textContent = fmt(state.totalMana | 0);
-
-    const pct = Math.min(100, (state.mana / state.cap) * 100).toFixed(1);
-    manaBar.style.width = pct + '%';
-    manaLabel.textContent = fmt(m) + ' / ' + fmt(state.cap);
-
-    updateShop();
-}
-
-// =====================================================================
-// СМЕНА ЭРЫ
-// =====================================================================
-
-function checkEra() {
-    // Определяем эру по totalMana (смотрим с конца, берём последнюю подходящую)
-    let newEra = 0;
-    if (state.totalMana >= 100_000) newEra = 2;
-    else if (state.totalMana >= 10_000)  newEra = 1;
-
-    if (newEra !== state.era) {
-        state.era = newEra;
-        state.orbLevel = Math.min(3, newEra + 1);
-        towerDirty = true;
-
-        // Перестраиваем фоновый градиент
-        rebuildBgGrad();
-
-        // Обновляем тему через data-era
-        document.body.dataset.era = ERA_THRESHOLDS[newEra].era;
-        eraBadge.textContent      = ERA_THRESHOLDS[newEra].label;
-
-        // Уведомление
-        showEraNotify(ERA_THRESHOLDS[newEra].notify);
-    }
-}
-
-function showEraNotify(text) {
-    eraNotify.textContent = text;
-    eraNotify.classList.add('show');
-    setTimeout(() => eraNotify.classList.remove('show'), 3000);
-}
-
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
 // МАГАЗИН
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
+
+const SECTION_LABELS = {
+    auto:  '⟡ АВТО-ДОБЫЧА',
+    click: '⟡ УСИЛЕНИЕ КЛИКА',
+    cap:   '⟡ БАШНЯ / ХРАНИЛИЩЕ',
+};
 
 function buildShop() {
-    shopList.innerHTML = '';
-    SHOP_ITEMS.forEach(item => {
+    shopEl.innerHTML = '';
+    let lastType = null;
+    ITEMS.forEach(item => {
+        if (item.type !== lastType) {
+            const h = document.createElement('div');
+            h.className = 'shop-section-title';
+            h.textContent = SECTION_LABELS[item.type];
+            shopEl.appendChild(h);
+            lastType = item.type;
+        }
         const el = document.createElement('div');
         el.className  = 'shop-item';
-        el.id         = 'shop-' + item.id;
+        el.id         = 'si-' + item.id;
+        el.dataset.type = item.type;
         el.innerHTML  = `
-            <span class="shop-item-name">${item.name}</span>
-            <span class="shop-item-desc">${item.desc}</span>
-            <div class="shop-item-footer">
-                <span class="shop-item-cost" id="cost-${item.id}">0 ✦</span>
-                <span class="shop-item-lvl"  id="lvl-${item.id}">ур. 0</span>
+            <span class="item-name">${item.name}</span>
+            <span class="item-desc">${item.desc}</span>
+            <div class="item-footer">
+                <span class="item-cost" id="ic-${item.id}">—</span>
+                <span class="item-lvl"  id="il-${item.id}">ур. 0</span>
             </div>`;
         el.addEventListener('click', () => buyItem(item.id));
-        shopList.appendChild(el);
+        shopEl.appendChild(el);
     });
 }
 
-// Стоимость следующего уровня
 function itemCost(item) {
-    const lvl = state.levels[item.id];
-    if (lvl >= item.maxLvl) return Infinity;
-    return Math.floor(item.base * Math.pow(item.growth, lvl));
+    const l = G.lvl[item.id];
+    return l >= item.max ? Infinity : Math.floor(item.base * Math.pow(item.grow, l));
 }
 
-function updateShop() {
-    SHOP_ITEMS.forEach(item => {
-        const cost    = itemCost(item);
-        const lvl     = state.levels[item.id];
-        const costEl  = document.getElementById('cost-' + item.id);
-        const lvlEl   = document.getElementById('lvl-'  + item.id);
-        const itemEl  = document.getElementById('shop-' + item.id);
-        if (!costEl) return;
-
-        costEl.textContent = lvl >= item.maxLvl ? 'МАКС' : fmt(cost) + ' ✦';
-        lvlEl.textContent  = 'ур. ' + lvl + '/' + item.maxLvl;
-        itemEl.classList.toggle('disabled', state.mana < cost || lvl >= item.maxLvl);
+function refreshShop() {
+    ITEMS.forEach(item => {
+        const cost = itemCost(item);
+        const l    = G.lvl[item.id];
+        document.getElementById('ic-' + item.id).textContent =
+            l >= item.max ? 'МАКС' : fmt(cost) + ' ✦';
+        document.getElementById('il-' + item.id).textContent =
+            'ур.' + l + '/' + item.max;
+        const el = document.getElementById('si-' + item.id);
+        el.classList.toggle('locked', G.mana < cost && l < item.max);
+        el.classList.toggle('maxed',  l >= item.max);
     });
 }
 
 function buyItem(id) {
-    const item = SHOP_ITEMS.find(i => i.id === id);
+    const item = ITEMS.find(i => i.id === id);
     const cost = itemCost(item);
-    if (state.mana < cost || state.levels[id] >= item.maxLvl) return;
+    if (G.mana < cost || G.lvl[id] >= item.max) return;
 
-    state.mana -= cost;
-    state.levels[id]++;
+    G.mana -= cost;
+    G.lvl[id]++;
 
-    // Применяем эффект покупки
-    if (item.type === 'auto')  state.autoRate   += item.effect;
-    if (item.type === 'click') state.clickPower += item.effect;
+    if (item.type === 'auto')  G.autoRate  += item.eff;
+    if (item.type === 'click') G.clickPow  += item.eff;
     if (item.type === 'cap') {
-        state.cap += item.effect;
-        // Визуальный апгрейд башни каждые 2 покупки cap
-        state.towerLevel = Math.min(5,
-            state.levels['vessel'] + state.levels['tower_up'] * 2);
-        towerDirty = true;
+        G.cap      += item.eff;
+        G.towerLvl  = Math.min(8, G.lvl['vessel'] + G.lvl['spire'] * 3);
+        twDirty     = true;
     }
-
-    updateUI();
+    refreshUI();
 }
 
-// =====================================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// =====================================================================
+// ════════════════════════════════════════════════════════════════════
+// UI
+// ════════════════════════════════════════════════════════════════════
 
-// Форматирование больших чисел: 1 234 567 → "1.2M"
 function fmt(n) {
-    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-    if (n >= 1_000)     return (n / 1_000).toFixed(n >= 10_000 ? 0 : 1) + 'k';
-    return String(n | 0);
+    n = n | 0;
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
+    if (n >= 1_000)     return (n / 1_000).toFixed(n >= 100_000 ? 0 : 1) + 'k';
+    return String(n);
 }
 
-// =====================================================================
-// ИНИЦИАЛИЗАЦИЯ
-// =====================================================================
+function refreshUI() {
+    const m = G.mana | 0;
+    sMana.textContent  = fmt(m);
+    sCap.textContent   = fmt(G.cap);
+    sClick.textContent = fmt(G.clickPow);
+    sAuto.textContent  = G.autoRate.toFixed(1);
+    sTotal.textContent = fmt(G.earned | 0);
 
+    const pct = Math.min(100, (G.mana / G.cap) * 100).toFixed(2);
+    manaBar.style.width = pct + '%';
+    manaText.textContent = fmt(m) + ' / ' + fmt(G.cap);
+
+    refreshShop();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// КЛИК
+// ════════════════════════════════════════════════════════════════════
+
+document.getElementById('orb-zone').addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    gainMana(G.clickPow);
+    orbBurst = 1;
+
+    // Визуальный пульс
+    const zone = document.getElementById('orb-zone');
+    zone.classList.remove('orb-pulse');
+    void zone.offsetWidth; // reflow для перезапуска анимации
+    zone.classList.add('orb-pulse');
+    zone.addEventListener('animationend', () => zone.classList.remove('orb-pulse'), { once: true });
+
+    // Всплывающее число
+    spawnPop('+' + fmt(G.clickPow), e.clientX, e.clientY);
+});
+
+function spawnPop(text, x, y) {
+    const el    = document.createElement('div');
+    el.className = 'pop';
+    el.textContent = text;
+    el.style.left  = (x - 20 + rnd(-10, 10)) + 'px';
+    el.style.top   = (y - 10) + 'px';
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+}
+
+// ════════════════════════════════════════════════════════════════════
+// МАНА + СМЕНА ЭРЫ
+// ════════════════════════════════════════════════════════════════════
+
+function gainMana(amount) {
+    G.mana   = Math.min(G.cap, G.mana + amount);
+    G.earned += amount;
+    refreshUI();
+    checkEra();
+}
+
+function checkEra() {
+    let newEra = 0;
+    if (G.earned >= 100_000) newEra = 2;
+    else if (G.earned >= 10_000) newEra = 1;
+
+    if (newEra > G.era) {
+        G.era     = newEra;
+        G.orbLvl  = Math.min(3, newEra + 1);
+        twDirty   = true;
+
+        // Перестроить фон
+        initBg();
+        document.body.dataset.era = ERAS[newEra].id;
+        eraName.textContent       = ERAS[newEra].name;
+
+        // Показать флэш
+        showEraFlash(ERAS[newEra].notify);
+
+        // Трещины реальности (в эпоху разрыва — больше)
+        spawnCracks(newEra === 2 ? 12 : 6);
+    }
+}
+
+function showEraFlash(lines) {
+    eraFlashInner.innerHTML = lines.join('<br>');
+    eraFlash.classList.add('show');
+    setTimeout(() => {
+        eraFlash.classList.remove('show');
+    }, 2800);
+    eraFlash.addEventListener('click', () => eraFlash.classList.remove('show'), { once: true });
+}
+
+// Трещины — CSS-элементы, разлетаются по экрану
+function spawnCracks(n) {
+    for (let i = 0; i < n; i++) {
+        const el = document.createElement('div');
+        el.className = 'crack';
+        const isH = Math.random() < 0.5;
+        if (isH) {
+            el.style.cssText = `left:${rnd(0,80)}%;top:${rnd(20,80)}%;width:${rnd(40,200)}px;height:1px;transform:rotate(${rnd(-15,15)}deg)`;
+        } else {
+            el.style.cssText = `left:${rnd(10,90)}%;top:${rnd(10,70)}%;width:1px;height:${rnd(40,150)}px;transform:rotate(${rnd(-10,10)}deg)`;
+        }
+        el.style.animationDelay = rnd(0, 0.5) + 's';
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove(), { once: true });
+    }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ГЛАВНЫЙ ЦИКЛ
+// ════════════════════════════════════════════════════════════════════
+
+let lastTime = performance.now();
+
+function loop() {
+    requestAnimationFrame(loop);
+
+    const now = performance.now();
+    const dt  = Math.min((now - lastTime) / 1000, 0.1); // кап 100ms
+    lastTime  = now;
+
+    // Авто-мана
+    if (G.autoRate > 0) gainMana(G.autoRate * dt);
+
+    // Анимация
+    orbAngle += 0.014;
+
+    // Рендер
+    drawBg();
+    drawOrb();
+    if (twDirty) { drawTower(); twDirty = false; }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// СТАРТ
+// ════════════════════════════════════════════════════════════════════
 buildShop();
-updateUI();
-drawTower();   // первый кадр башни
-loop();        // запускаем главный цикл
+refreshUI();
+drawTower();
+loop();
 </script>
 </body>
 </html>

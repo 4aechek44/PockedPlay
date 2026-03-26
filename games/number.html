@@ -71,17 +71,28 @@
         <button><a href="../gamehub.html">Игры</a></button>
         <button><a href="../profile.html">Профиль</a></button>
     </nav>
-    <!-- РАНДОМАЙЗЕР -->
-    <script>
-        function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+    
+        <!-- ЗАГОЛОВОК -->
+    <h1>Угадай число</h1>
+    <p>В этой игре я загадываю число от 1 до 100 и тебе нужно угадать какое</p>
+    <p>Удачи :ъ</p>
+    
+    <!-- КНОПКИ -->
+<div class="buttons">
+    <input type="text" id="guessInput">
+    <button onclick="checkGuess()">Подтвердить</button>  <!-- ✅ исправлено onclick -->
+    <button onclick="location.reload()">Новое число</button>
+</div>
 
-        const randomNumber = getRandomInt(1, 100);
-        console.log(randomNumber);
-        const userGuess = document.getElementById("guessInput").value;
-            
-        function checkGuess() {
+    <!-- РАНДОМАЙЗЕР -->
+<script>
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    const randomNumber = getRandomInt(1, 100);
+
+    function checkGuess() {
         const userGuess = Number(document.getElementById("guessInput").value);
 
         if (userGuess === randomNumber) {
@@ -90,20 +101,8 @@
             alert("Слишком большое число");
         } else {
             alert("Слишком маленькое число");
+        }
     }
-}    
-    </script>
-    
-        <!-- ЗАГОЛОВОК -->
-    <h1>Угадай число</h1>
-    <p>В этой игре я загадываю число от 1 до 100 и тебе нужно угадать какое</p>
-    <p>Удачи :ъ</p>
-
-    <!-- КНОПКИ -->
-    <div class="buttons">
-        <input type="text" id="guessInput">
-        <button oneclck="checkGuess()">Подтвердить</button>
-        <button onclick="location.reload()">Новое число</button>
-    </div>   
+</script>
 </body>
 </html>

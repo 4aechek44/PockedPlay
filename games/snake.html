@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP — Змейка</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #020d1a;
+    color: #cce8ff;
+    font-family: 'VT323', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    /* Запрещаем скролл страницы при тапе на d-pad */
+    overflow: hidden;
+}
+
+/* Навбар */
+#main-nav {
+    display: flex; gap: 6px; padding: 10px 16px;
+    position: relative; z-index: 10; width: 100%;
+}
+#main-nav button {
+    border: 2px solid #555; background: transparent;
+    font-size: 14px; padding: 6px 12px; cursor: pointer;
+    font-family: inherit; transition: background 0.2s;
+}
+#main-nav button:hover { background: #ffffff22; }
+#main-nav button a { text-decoration: none; color: #cce8ff; }
+
+h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px; color: #4dff91;
+    letter-spacing: 3px; margin: 12px 0 4px;
+    text-shadow: 0 0 10px #4dff9188;
+}
+
+.scores {
+    display: flex; gap: 30px;
+    font-size: 22px; color: #4a90b8; margin-bottom: 10px;
+}
+.scores span { color: #4dff91; }
+
+/* Canvas масштабируется под экран, но остаётся квадратным */
+#gameCanvas {
+    border: 2px solid #1a4a6a;
+    background: #020d1a;
+    display: block;
+    image-rendering: pixelated;
+    width: min(400px, 96vw);
+    height: min(400px, 96vw);
+}
+
+/* Оверлей поверх canvas */
+#overlay {
+    position: absolute;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px; pointer-events: none;
+}
+#overlay.hidden { display: none; }
+#overlay .big {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px; color: #4dff91;
+    text-shadow: 0 0 14px #4dff9199;
+    text-align: center; line-height: 1.9;
+}
+#overlay .hint { font-size: 20px; color: #4a90b8; }
+.btn-row { display: flex; gap: 10px; margin-top: 6px; pointer-events: all; }
+button.game-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; background: transparent;
+    border: 2px solid #4dff91; color: #4dff91;
+    padding: 10px 16px; cursor: pointer;
+    transition: background 0.15s;
+}
+button.game-btn:hover { background: #4dff9122; }
+
+/* D-pad — крестовина под полем */
+#dpad {
+    display: grid;
+    grid-template-areas: ". up ." "left . right" ". down .";
+    gap: 6px;
+    margin-top: 14px;
+    /* Запрещаем браузеру перехватывать тапы как скролл */
+    touch-action: none;
+}
+.dp {
+    width: 60px; height: 60px;
+    background: rgba(77,255,145,0.07);
+    border: 2px solid #1f5a30;
+    color: #4dff91; font-size: 26px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none;
+    border-radius: 4px;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.08s;
+}
+.dp:active { background: rgba(77,255,145,0.22); }
+#du { grid-area: up; }
+#dl { grid-area: left; }
+#dr { grid-area: right; }
+#dd { grid-area: down; }
+
+/* На десктопе (есть hover) прячем d-pad */
+@media (hover: hover) and (pointer: fine) {
+    #dpad { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav id="main-nav">
+    <button><a href="../index.html">Главная</a></button>
+    <button><a href="../gamehub.html">Игры</a></button>
+    <button><a href="../profile.html">Профиль</a></button>
+</nav>
+
+<h1>// ЗМЕЙКА //</h1>
+
+<div class="scores">
+    ОЧКИ: <span id="scoreVal">0</span>&nbsp;&nbsp;&nbsp;РЕКОРД: <span id="hiVal">0</span>
+</div>
+
+<!-- Обёртка position:relative нужна для позиционирования оверлея -->
+<div style="position:relative; display:inline-block;">
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="overlay">
+        <div class="big"  id="oText">ЗМЕЙКА</div>
+        <div class="hint" id="oHint">СТРЕЛКИ или WASD</div>
+        <div class="btn-row"><button class="game-btn" id="startBtn">СТАРТ</button></div>
+    </div>
+</div>
+
+<!-- D-pad: видим только на тач-экранах -->
+<div id="dpad">
+    <div class="dp" id="du">▲</div>
+    <div class="dp" id="dl">◀</div>
+    <div class="dp" id="dr">▶</div>
+    <div class="dp" id="dd">▼</div>
+</div>
+
+<script>
+// ========================
+// КОНСТАНТЫ
+// ========================
+
+const CELL     = 20;    // px на клетку (canvas 400×400 = 20×20 клеток)
+const COLS     = 20;
+const ROWS     = 20;
+const TICK     = 120;   // мс/шаг в начале
+const MIN_TICK = 55;    // мс/шаг максимум
+
+const C = {
+    bg:    '#020d1a',
+    grid:  '#0a1e2e',
+    head:  '#4dff91',
+    body:  '#2acc6a',
+    tail:  '#1faa55',
+    food:  '#ff6b6b',
+    food2: '#cc4444',
+};
+
+// Смещения по направлению
+const DIR = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+// Запрещённые развороты
+const OPP = { up:'down', down:'up', left:'right', right:'left' };
+
+// ========================
+// СОСТОЯНИЕ
+// ========================
+
+let snake    = [];
+let dir      = 'right';
+let nextDir  = 'right';
+let food     = null;
+let score    = 0;
+let hiScore  = 0;
+let state    = 'idle';   // idle | running | dead
+let tickMs   = TICK;
+let lastTick = 0;
+let rafId    = null;
+
+// ========================
+// DOM
+// ========================
+
+const canvas  = document.getElementById('gameCanvas');
+const ctx     = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const overlay  = document.getElementById('overlay');
+const oText    = document.getElementById('oText');
+const oHint    = document.getElementById('oHint');
+const startBtn = document.getElementById('startBtn');
+const scoreEl  = document.getElementById('scoreVal');
+const hiEl     = document.getElementById('hiVal');
+
+// ========================
+// УПРАВЛЕНИЕ — клавиатура
+// ========================
+
+const KEY_MAP = {
+    ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+    KeyW:'up',    KeyS:'down',      KeyA:'left',       KeyD:'right',
+};
+
+document.addEventListener('keydown', e => {
+    const d = KEY_MAP[e.code];
+    if (!d) return;
+    e.preventDefault();
+    if (state === 'idle' || state === 'dead') { startGame(); return; }
+    if (d !== OPP[dir]) nextDir = d;
+});
+
+startBtn.addEventListener('click', startGame);
+
+// ========================
+// УПРАВЛЕНИЕ — d-pad
+// ========================
+
+function dpadInput(d) {
+    if (state === 'idle' || state === 'dead') { startGame(); return; }
+    if (d !== OPP[dir]) nextDir = d;
+}
+
+// pointerdown — срабатывает и на touch и на mouse, быстрее чем click
+document.getElementById('du').addEventListener('pointerdown', e => { e.preventDefault(); dpadInput('up');    });
+document.getElementById('dd').addEventListener('pointerdown', e => { e.preventDefault(); dpadInput('down');  });
+document.getElementById('dl').addEventListener('pointerdown', e => { e.preventDefault(); dpadInput('left');  });
+document.getElementById('dr').addEventListener('pointerdown', e => { e.preventDefault(); dpadInput('right'); });
+
+// ========================
+// ИГРОВАЯ ЛОГИКА
+// ========================
+
+function startGame() {
+    snake   = [{ x:12, y:10 }, { x:11, y:10 }, { x:10, y:10 }];
+    dir     = nextDir = 'right';
+    score   = 0;
+    tickMs  = TICK;
+    scoreEl.textContent = 0;
+    spawnFood();
+
+    state = 'running';
+    overlay.classList.add('hidden');
+    if (!rafId) rafId = requestAnimationFrame(loop);
+}
+
+function gameOver() {
+    state = 'dead';
+    if (score > hiScore) { hiScore = score; hiEl.textContent = hiScore; }
+    oText.innerHTML      = 'GAME&nbsp;OVER';
+    oHint.textContent    = 'Очки: ' + score;
+    startBtn.textContent = 'ЕЩЁ РАЗ';
+    overlay.classList.remove('hidden');
+    canvas.style.outline = '2px solid #ff4444';
+    setTimeout(() => { canvas.style.outline = ''; }, 350);
+}
+
+function spawnFood() {
+    let cell;
+    do {
+        cell = { x: Math.random() * COLS | 0, y: Math.random() * ROWS | 0 };
+    } while (snake.some(s => s.x === cell.x && s.y === cell.y));
+    food = cell;
+}
+
+// ========================
+// ГЛАВНЫЙ ЦИКЛ
+// ========================
+
+function loop(ts) {
+    rafId = requestAnimationFrame(loop);
+    if (state === 'running' && ts - lastTick >= tickMs) {
+        lastTick = ts;
+        step();
+    }
+    draw();
+}
+
+function step() {
+    dir = nextDir;
+    const [dx, dy] = DIR[dir];
+    const nx = snake[0].x + dx;
+    const ny = snake[0].y + dy;
+
+    // Стена
+    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) { gameOver(); return; }
+    // Себя (хвост исключаем — он уйдёт)
+    for (let i = 0; i < snake.length - 1; i++) {
+        if (snake[i].x === nx && snake[i].y === ny) { gameOver(); return; }
+    }
+
+    snake.unshift({ x: nx, y: ny });
+
+    if (nx === food.x && ny === food.y) {
+        score++;
+        scoreEl.textContent = score;
+        spawnFood();
+        if (score % 5 === 0) tickMs = Math.max(MIN_TICK, tickMs - 8);
+    } else {
+        snake.pop();
+    }
+}
+
+// ========================
+// РИСОВАНИЕ
+// ========================
+
+function draw() {
+    // Фон
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, 400, 400);
+
+    // Шахматная сетка
+    ctx.fillStyle = C.grid;
+    for (let x = 0; x < COLS; x++)
+        for (let y = 0; y < ROWS; y++)
+            if ((x + y) % 2 === 0) ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+
+    if (state === 'idle') return;
+
+    // Еда (мигает)
+    ctx.fillStyle = Math.floor(Date.now() / 250) % 2 ? C.food : C.food2;
+    ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
+
+    // Змейка
+    for (let i = snake.length - 1; i >= 0; i--) {
+        const s = snake[i];
+        ctx.fillStyle = i === 0 ? C.head : i < snake.length * 0.4 ? C.body : C.tail;
+        const p = i === 0 ? 1 : 2;
+        ctx.fillRect(s.x * CELL + p, s.y * CELL + p, CELL - p * 2, CELL - p * 2);
+    }
+
+    // Глаза (смотрят в направлении движения)
+    const [dx, dy] = DIR[dir];
+    const ex = snake[0].x * CELL + CELL / 2 + dx * 4;
+    const ey = snake[0].y * CELL + CELL / 2 + dy * 4;
+    const px = dy !== 0 ? 4 : 0;
+    const py = dx !== 0 ? 4 : 0;
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(ex + px - 1, ey + py - 1, 3, 3);
+    ctx.fillRect(ex - px - 1, ey - py - 1, 3, 3);
+}
+
+// ========================
+// ИНИЦИАЛИЗАЦИЯ
+// ========================
+
+// Позиционируем оверлей точно поверх canvas
+overlay.style.cssText =
+    'top:'    + canvas.offsetTop    + 'px;' +
+    'left:'   + canvas.offsetLeft   + 'px;' +
+    'width:'  + canvas.offsetWidth  + 'px;' +
+    'height:' + canvas.offsetHeight + 'px;';
+
+overlay.classList.remove('hidden');
+draw();
+rafId = requestAnimationFrame(loop);
+</script>
+</body>
+</html>

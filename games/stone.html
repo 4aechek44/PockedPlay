@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP — КНБ</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #020d1a;
+    color: #cce8ff;
+    font-family: 'VT323', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#main-nav {
+    display: flex; gap: 6px; padding: 10px 16px;
+    position: relative; z-index: 10; width: 100%;
+}
+#main-nav button {
+    border: 2px solid #555; background: transparent;
+    font-size: 14px; padding: 6px 12px; cursor: pointer;
+    font-family: inherit; transition: background 0.2s;
+}
+#main-nav button:hover { background: #ffffff22; }
+#main-nav button a { text-decoration: none; color: #cce8ff; }
+
+h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px; color: #7ecfff;
+    letter-spacing: 3px; margin: 18px 0 6px;
+    text-shadow: 0 0 10px #3ab0ff88;
+}
+
+/* Счёт */
+.scoreboard {
+    display: flex; gap: 0;
+    border: 2px solid #1a4a6a;
+    margin-bottom: 24px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+}
+.score-cell {
+    padding: 10px 20px; text-align: center;
+    border-right: 2px solid #1a4a6a;
+    min-width: 80px;
+}
+.score-cell:last-child { border-right: none; }
+.score-cell .label { color: #4a90b8; display: block; margin-bottom: 6px; }
+.score-cell .val   { font-size: 20px; }
+#sc-w .val { color: #4dff91; }
+#sc-d .val { color: #ffd84d; }
+#sc-l .val { color: #ff6b6b; }
+
+/* Арена */
+.arena {
+    display: flex; align-items: center; justify-content: center;
+    gap: 30px; margin-bottom: 20px;
+}
+
+.fighter {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 10px;
+}
+.fighter-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px; color: #4a90b8; letter-spacing: 2px;
+}
+
+/* Эмодзи-карточка выбора */
+.card {
+    width: 110px; height: 110px;
+    border: 2px solid #1a4a6a;
+    background: rgba(10,30,60,0.7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 56px;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+}
+/* Подсветка результата */
+.card.win  { border-color: #4dff91; background: rgba(77,255,145,0.08); }
+.card.lose { border-color: #ff6b6b; background: rgba(255,107,107,0.08); }
+.card.draw { border-color: #ffd84d; background: rgba(255,216,77,0.08); }
+
+.vs {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px; color: #2a5a8a;
+}
+
+/* Строка результата */
+#result-row {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px; min-height: 24px;
+    text-align: center; letter-spacing: 1px;
+    margin-bottom: 20px;
+}
+#result-row.win  { color: #4dff91; text-shadow: 0 0 10px #4dff9188; }
+#result-row.lose { color: #ff6b6b; }
+#result-row.draw { color: #ffd84d; }
+
+/* Кнопки выбора */
+.choices {
+    display: flex; gap: 14px; margin-bottom: 10px;
+}
+.choice-btn {
+    width: 90px; height: 90px;
+    border: 2px solid #1a4a6a;
+    background: rgba(10,30,60,0.6);
+    font-size: 42px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    gap: 4px;
+}
+.choice-btn span.lbl {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: #4a90b8;
+}
+.choice-btn:hover  { border-color: #7ecfff; background: rgba(126,207,255,0.08); }
+.choice-btn:active { transform: scale(0.92); }
+
+/* Анимация "думает" — точки */
+@keyframes dots {
+    0%,100% { content: '.'; }
+    33%      { content: '..'; }
+    66%      { content: '...'; }
+}
+.thinking::after {
+    content: '.';
+    animation: dots 0.6s infinite;
+}
+</style>
+</head>
+<body>
+
+<nav id="main-nav">
+    <button><a href="../index.html">Главная</a></button>
+    <button><a href="../gamehub.html">Игры</a></button>
+    <button><a href="../profile.html">Профиль</a></button>
+</nav>
+
+<h1>// КНБ //</h1>
+
+<!-- Счёт -->
+<div class="scoreboard">
+    <div class="score-cell" id="sc-w">
+        <span class="label">ПОБЕДЫ</span>
+        <span class="val" id="wins">0</span>
+    </div>
+    <div class="score-cell" id="sc-d">
+        <span class="label">НИЧЬИ</span>
+        <span class="val" id="draws">0</span>
+    </div>
+    <div class="score-cell" id="sc-l">
+        <span class="label">ПОРАЖЕНИЯ</span>
+        <span class="val" id="losses">0</span>
+    </div>
+</div>
+
+<!-- Арена -->
+<div class="arena">
+    <div class="fighter">
+        <div class="fighter-label">ТЫ</div>
+        <div class="card" id="card-player">❓</div>
+    </div>
+    <div class="vs">VS</div>
+    <div class="fighter">
+        <div class="fighter-label">ПК</div>
+        <div class="card" id="card-cpu">❓</div>
+    </div>
+</div>
+
+<!-- Результат -->
+<div id="result-row">выбери свой знак</div>
+
+<!-- Кнопки выбора -->
+<div class="choices">
+    <button class="choice-btn" data-choice="rock">
+        🪨<span class="lbl">КАМЕНЬ</span>
+    </button>
+    <button class="choice-btn" data-choice="scissors">
+        ✂️<span class="lbl">НОЖНИЦЫ</span>
+    </button>
+    <button class="choice-btn" data-choice="paper">
+        📄<span class="lbl">БУМАГА</span>
+    </button>
+</div>
+
+<script>
+// ========================
+// ДАННЫЕ
+// ========================
+
+const EMOJI = { rock:'🪨', scissors:'✂️', paper:'📄' };
+const LABEL = { rock:'КАМЕНЬ', scissors:'НОЖНИЦЫ', paper:'БУМАГА' };
+
+// Кто кого бьёт: ключ побеждает значение
+const BEATS = { rock:'scissors', scissors:'paper', paper:'rock' };
+
+const CHOICES = ['rock', 'scissors', 'paper'];
+
+// ========================
+// СОСТОЯНИЕ
+// ========================
+
+let wins = 0, draws = 0, losses = 0;
+let busy = false; // блокировка во время анимации
+
+// ========================
+// DOM
+// ========================
+
+const cardPlayer = document.getElementById('card-player');
+const cardCpu    = document.getElementById('card-cpu');
+const resultRow  = document.getElementById('result-row');
+const winsEl     = document.getElementById('wins');
+const drawsEl    = document.getElementById('draws');
+const lossesEl   = document.getElementById('losses');
+
+// ========================
+// ЛОГИКА
+// ========================
+
+function play(playerChoice) {
+    if (busy) return;
+    busy = true;
+
+    // Сброс подсветок
+    cardPlayer.className = 'card';
+    cardCpu.className    = 'card';
+    resultRow.className  = '';
+
+    // Показываем выбор игрока сразу
+    cardPlayer.textContent = EMOJI[playerChoice];
+
+    // ПК "думает" — мелькание случайных эмодзи
+    resultRow.className   = '';
+    resultRow.textContent = '';
+    resultRow.classList.add('thinking');
+    resultRow.textContent = 'Думаю';
+
+    let blinkCount = 0;
+    const blinkInterval = setInterval(() => {
+        cardCpu.textContent = EMOJI[CHOICES[blinkCount % 3]];
+        blinkCount++;
+    }, 100);
+
+    setTimeout(() => {
+        clearInterval(blinkInterval);
+        resultRow.classList.remove('thinking');
+
+        // Выбор ПК
+        const cpuChoice = CHOICES[Math.floor(Math.random() * 3)];
+        cardCpu.textContent = EMOJI[cpuChoice];
+
+        // Определяем итог
+        let result, text;
+        if (playerChoice === cpuChoice) {
+            result = 'draw';  text = 'НИЧЬЯ';        draws++;  drawsEl.textContent  = draws;
+        } else if (BEATS[playerChoice] === cpuChoice) {
+            result = 'win';   text = 'ТЫ ПОБЕДИЛ!';  wins++;   winsEl.textContent   = wins;
+        } else {
+            result = 'lose';  text = 'ТЫ ПРОИГРАЛ';  losses++; lossesEl.textContent = losses;
+        }
+
+        // Подсвечиваем карточки
+        cardPlayer.classList.add(result);
+        cardCpu.classList.add(result === 'win' ? 'lose' : result === 'lose' ? 'win' : 'draw');
+
+        // Показываем результат
+        resultRow.textContent = text;
+        resultRow.className   = result;
+
+        busy = false;
+    }, 700); // 700мс "раздумий"
+}
+
+// ========================
+// СОБЫТИЯ
+// ========================
+
+document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => play(btn.dataset.choice));
+});
+</script>
+</body>
+</html>

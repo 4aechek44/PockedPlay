@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP — Тетрис</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #020d1a;
+    color: #cce8ff;
+    font-family: 'VT323', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+#main-nav {
+    display: flex; gap: 6px; padding: 10px 16px;
+    width: 100%; position: relative; z-index: 10;
+}
+#main-nav button {
+    border: 2px solid #555; background: transparent;
+    font-size: 14px; padding: 6px 12px; cursor: pointer;
+    font-family: inherit; transition: background 0.2s;
+}
+#main-nav button:hover { background: #ffffff22; }
+#main-nav button a { text-decoration: none; color: #cce8ff; }
+
+h1 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px; color: #7ecfff;
+    letter-spacing: 3px; margin: 10px 0 8px;
+    text-shadow: 0 0 10px #3ab0ff88;
+}
+
+/* Основной лейаут: поле + боковая панель */
+#game-wrap {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+/* Игровое поле 10×20 клеток по 28px */
+#gameCanvas {
+    border: 2px solid #1a4a6a;
+    background: #020d1a;
+    display: block;
+    image-rendering: pixelated;
+    flex-shrink: 0;
+}
+
+/* Боковая панель */
+#side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 110px;
+}
+
+.side-box {
+    border: 2px solid #1a4a6a;
+    padding: 8px;
+    background: rgba(10,30,60,0.5);
+}
+.side-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px; color: #4a90b8;
+    letter-spacing: 1px; margin-bottom: 6px;
+    display: block;
+}
+.side-val {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px; color: #7ecfff;
+    display: block;
+}
+
+/* Превью следующей фигуры */
+#nextCanvas {
+    display: block;
+    image-rendering: pixelated;
+    margin: 4px auto 0;
+}
+
+/* Кнопка старта/паузы */
+#btnStart {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px; background: transparent;
+    border: 2px solid #7ecfff; color: #7ecfff;
+    padding: 8px 6px; cursor: pointer;
+    transition: background 0.15s; width: 100%;
+}
+#btnStart:hover { background: #7ecfff22; }
+
+/* Оверлей */
+#overlay {
+    position: absolute;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; pointer-events: none;
+    background: rgba(2,13,26,0.82);
+}
+#overlay.hidden { display: none; }
+#overlay .big {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px; color: #7ecfff;
+    text-shadow: 0 0 12px #3ab0ff99;
+    text-align: center; line-height: 2;
+}
+#overlay .hint { font-size: 18px; color: #4a90b8; text-align: center; }
+.btn-row { pointer-events: all; }
+button.game-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px; background: transparent;
+    border: 2px solid #7ecfff; color: #7ecfff;
+    padding: 10px 16px; cursor: pointer;
+    transition: background 0.15s;
+}
+button.game-btn:hover { background: #7ecfff22; }
+
+/* D-pad для мобильных */
+#dpad {
+    display: grid;
+    grid-template-areas: ". up ." "left down right";
+    gap: 6px;
+    margin-top: 10px;
+    touch-action: none;
+}
+.dp {
+    width: 56px; height: 56px;
+    border: 2px solid #1a4a6a;
+    background: rgba(10,30,60,0.6);
+    color: #7ecfff; font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none; border-radius: 4px;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.08s;
+}
+.dp:active { background: rgba(126,207,255,0.2); }
+#du { grid-area: up; }    /* вращение */
+#dl { grid-area: left; }
+#dr { grid-area: right; }
+#dd { grid-area: down; }
+
+@media (hover: hover) and (pointer: fine) { #dpad { display: none; } }
+</style>
+</head>
+<body>
+
+<nav id="main-nav">
+    <button><a href="../index.html">Главная</a></button>
+    <button><a href="../gamehub.html">Игры</a></button>
+    <button><a href="../profile.html">Профиль</a></button>
+</nav>
+
+<h1>// ТЕТРИС //</h1>
+
+<div id="game-wrap">
+
+    <!-- Игровое поле -->
+    <div style="position:relative; display:inline-block;">
+        <canvas id="gameCanvas" width="280" height="560"></canvas>
+        <div id="overlay">
+            <div class="big"  id="oText">ТЕТРИС</div>
+            <div class="hint" id="oHint">← → движение<br>↑ вращение<br>↓ ускорение</div>
+            <div class="btn-row"><button class="game-btn" id="startBtn">СТАРТ</button></div>
+        </div>
+    </div>
+
+    <!-- Боковая панель -->
+    <div id="side">
+        <div class="side-box">
+            <span class="side-title">ОЧКИ</span>
+            <span class="side-val" id="sScore">0</span>
+        </div>
+        <div class="side-box">
+            <span class="side-title">УРОВЕНЬ</span>
+            <span class="side-val" id="sLevel">1</span>
+        </div>
+        <div class="side-box">
+            <span class="side-title">ЛИНИИ</span>
+            <span class="side-val" id="sLines">0</span>
+        </div>
+        <div class="side-box">
+            <span class="side-title">СЛЕД.</span>
+            <canvas id="nextCanvas" width="80" height="80"></canvas>
+        </div>
+        <button id="btnStart">ПАУЗА</button>
+    </div>
+
+</div>
+
+<!-- D-pad -->
+<div id="dpad">
+    <div class="dp" id="du">↻</div>
+    <div class="dp" id="dl">◀</div>
+    <div class="dp" id="dd">▼</div>
+    <div class="dp" id="dr">▶</div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// КОНСТАНТЫ
+// ════════════════════════════════════════════
+
+const COLS = 10, ROWS = 20, CELL = 28;
+
+// Очки за очищенные линии (×уровень)
+const LINE_SCORES = [0, 100, 300, 500, 800];
+
+// Задержка падения (мс) по уровням
+function levelDelay(lvl) { return Math.max(80, 700 - (lvl - 1) * 60); }
+
+// Тетромино: формы и цвета
+// Каждая фигура — массив поворотов, каждый поворот — массив [col, row]
+const PIECES = [
+    { // I
+        color: '#3ab0ff',
+        dark:  '#1a6a99',
+        shapes: [
+            [[0,1],[1,1],[2,1],[3,1]],
+            [[2,0],[2,1],[2,2],[2,3]],
+            [[0,2],[1,2],[2,2],[3,2]],
+            [[1,0],[1,1],[1,2],[1,3]],
+        ],
+    },
+    { // O
+        color: '#ffd84d',
+        dark:  '#997a00',
+        shapes: [
+            [[1,0],[2,0],[1,1],[2,1]],
+        ],
+    },
+    { // T
+        color: '#cc44ff',
+        dark:  '#6a1a88',
+        shapes: [
+            [[1,0],[0,1],[1,1],[2,1]],
+            [[1,0],[1,1],[2,1],[1,2]],
+            [[0,1],[1,1],[2,1],[1,2]],
+            [[1,0],[0,1],[1,1],[1,2]],
+        ],
+    },
+    { // S
+        color: '#4dff91',
+        dark:  '#1a7a40',
+        shapes: [
+            [[1,0],[2,0],[0,1],[1,1]],
+            [[1,0],[1,1],[2,1],[2,2]],
+            [[1,1],[2,1],[0,2],[1,2]],
+            [[0,0],[0,1],[1,1],[1,2]],
+        ],
+    },
+    { // Z
+        color: '#ff6b6b',
+        dark:  '#882020',
+        shapes: [
+            [[0,0],[1,0],[1,1],[2,1]],
+            [[2,0],[1,1],[2,1],[1,2]],
+            [[0,1],[1,1],[1,2],[2,2]],
+            [[1,0],[0,1],[1,1],[0,2]],
+        ],
+    },
+    { // J
+        color: '#ff8c00',
+        dark:  '#884400',
+        shapes: [
+            [[0,0],[0,1],[1,1],[2,1]],
+            [[1,0],[2,0],[1,1],[1,2]],
+            [[0,1],[1,1],[2,1],[2,2]],
+            [[1,0],[1,1],[0,2],[1,2]],
+        ],
+    },
+    { // L
+        color: '#00ccff',
+        dark:  '#006688',
+        shapes: [
+            [[2,0],[0,1],[1,1],[2,1]],
+            [[1,0],[1,1],[1,2],[2,2]],
+            [[0,1],[1,1],[2,1],[0,2]],
+            [[0,0],[1,0],[1,1],[1,2]],
+        ],
+    },
+];
+
+// ════════════════════════════════════════════
+// СОСТОЯНИЕ
+// ════════════════════════════════════════════
+
+// Доска: двумерный массив ROWS×COLS, 0 = пусто, иначе индекс цвета (1-based)
+let board = [];
+let piece  = null;   // { type, rot, x, y } — текущая фигура
+let next   = null;   // следующая фигура (индекс)
+let score  = 0, lines = 0, level = 1;
+let state  = 'idle'; // idle | running | paused | dead
+let dropTimer = 0, lastTs = 0;
+let rafId  = null;
+
+// ════════════════════════════════════════════
+// DOM
+// ════════════════════════════════════════════
+
+const canvas   = document.getElementById('gameCanvas');
+const ctx      = canvas.getContext('2d');
+const nxCanvas = document.getElementById('nextCanvas');
+const nxCtx    = nxCanvas.getContext('2d');
+ctx.imageSmoothingEnabled   = false;
+nxCtx.imageSmoothingEnabled = false;
+
+const overlay  = document.getElementById('overlay');
+const oText    = document.getElementById('oText');
+const oHint    = document.getElementById('oHint');
+const startBtn = document.getElementById('startBtn');
+const btnStart = document.getElementById('btnStart');
+const sScore   = document.getElementById('sScore');
+const sLevel   = document.getElementById('sLevel');
+const sLines   = document.getElementById('sLines');
+
+// Позиционируем оверлей поверх canvas
+function posOverlay() {
+    overlay.style.cssText =
+        'top:'    + canvas.offsetTop    + 'px;' +
+        'left:'   + canvas.offsetLeft   + 'px;' +
+        'width:'  + canvas.offsetWidth  + 'px;' +
+        'height:' + canvas.offsetHeight + 'px;';
+}
+
+// ════════════════════════════════════════════
+// ИНИЦИАЛИЗАЦИЯ ДОСКИ
+// ════════════════════════════════════════════
+
+function initBoard() {
+    board = Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
+}
+
+// ════════════════════════════════════════════
+// ФИГУРЫ
+// ════════════════════════════════════════════
+
+function randomPiece() { return Math.floor(Math.random() * PIECES.length); }
+
+// Возвращает клетки фигуры в абсолютных координатах доски
+function cells(type, rot, ox, oy) {
+    return PIECES[type].shapes[rot].map(([c, r]) => [ox + c, oy + r]);
+}
+
+// Проверка: можно ли разместить фигуру
+function canPlace(type, rot, ox, oy) {
+    return cells(type, rot, ox, oy).every(([c, r]) =>
+        c >= 0 && c < COLS && r >= 0 && r < ROWS && board[r][c] === 0
+    );
+}
+
+function spawnPiece() {
+    const type = next ?? randomPiece();
+    next = randomPiece();
+    // Стартовая позиция: по центру сверху
+    const rot = 0;
+    const ox  = Math.floor((COLS - 4) / 2);
+    const oy  = 0;
+    if (!canPlace(type, rot, ox, oy)) {
+        // Нельзя разместить — конец игры
+        gameOver();
+        return;
+    }
+    piece = { type, rot, x: ox, y: oy };
+}
+
+// Фиксируем фигуру на доске
+function lockPiece() {
+    cells(piece.type, piece.rot, piece.x, piece.y).forEach(([c, r]) => {
+        board[r][c] = piece.type + 1; // +1 чтобы 0 = пусто
+    });
+    clearLines();
+    spawnPiece();
+}
+
+// ════════════════════════════════════════════
+// ЛИНИИ
+// ════════════════════════════════════════════
+
+function clearLines() {
+    let cleared = 0;
+    for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r].every(c => c !== 0)) {
+            board.splice(r, 1);
+            board.unshift(new Array(COLS).fill(0));
+            cleared++;
+            r++; // проверяем эту строку снова
+        }
+    }
+    if (cleared) {
+        lines += cleared;
+        score += LINE_SCORES[cleared] * level;
+        level  = Math.floor(lines / 10) + 1;
+        sScore.textContent = score;
+        sLines.textContent = lines;
+        sLevel.textContent = level;
+    }
+}
+
+// ════════════════════════════════════════════
+// УПРАВЛЕНИЕ
+// ════════════════════════════════════════════
+
+function tryMove(dx, dy) {
+    if (state !== 'running' || !piece) return false;
+    if (canPlace(piece.type, piece.rot, piece.x + dx, piece.y + dy)) {
+        piece.x += dx; piece.y += dy;
+        return true;
+    }
+    return false;
+}
+
+function tryRotate() {
+    if (state !== 'running' || !piece) return;
+    const p    = PIECES[piece.type];
+    const newR = (piece.rot + 1) % p.shapes.length;
+    // Wall kick: пробуем 0, ±1, ±2 по X
+    for (const kick of [0, -1, 1, -2, 2]) {
+        if (canPlace(piece.type, newR, piece.x + kick, piece.y)) {
+            piece.rot = newR;
+            piece.x  += kick;
+            return;
+        }
+    }
+}
+
+function hardDrop() {
+    if (state !== 'running' || !piece) return;
+    while (canPlace(piece.type, piece.rot, piece.x, piece.y + 1)) piece.y++;
+    lockPiece();
+    dropTimer = 0;
+}
+
+// Клавиатура
+const KEYS = {
+    ArrowLeft()  { tryMove(-1, 0); },
+    ArrowRight() { tryMove(1, 0); },
+    ArrowDown()  { if (!tryMove(0, 1)) { lockPiece(); } dropTimer = 0; },
+    ArrowUp()    { tryRotate(); },
+    Space()      { hardDrop(); },
+    KeyZ()       { tryRotate(); },
+    KeyP()       { togglePause(); },
+};
+
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space') e.preventDefault();
+    if (state === 'idle' || state === 'dead') { startGame(); return; }
+    if (KEYS[e.code]) KEYS[e.code]();
+});
+
+// D-pad
+document.getElementById('du').addEventListener('pointerdown', e => { e.preventDefault(); tryRotate(); });
+document.getElementById('dl').addEventListener('pointerdown', e => { e.preventDefault(); tryMove(-1, 0); });
+document.getElementById('dr').addEventListener('pointerdown', e => { e.preventDefault(); tryMove(1, 0); });
+document.getElementById('dd').addEventListener('pointerdown', e => { e.preventDefault(); if (!tryMove(0, 1)) lockPiece(); dropTimer = 0; });
+
+startBtn.addEventListener('click', startGame);
+btnStart.addEventListener('click', () => {
+    if (state === 'running') togglePause();
+    else if (state === 'paused') togglePause();
+    else startGame();
+});
+
+// ════════════════════════════════════════════
+// ИГРОВОЙ ПРОЦЕСС
+// ════════════════════════════════════════════
+
+function startGame() {
+    initBoard();
+    score = lines = 0; level = 1;
+    sScore.textContent = 0;
+    sLines.textContent = 0;
+    sLevel.textContent = 1;
+    next = null;
+    spawnPiece();
+    state     = 'running';
+    dropTimer = 0; lastTs = 0;
+    overlay.classList.add('hidden');
+    btnStart.textContent = 'ПАУЗА';
+    if (!rafId) rafId = requestAnimationFrame(loop);
+}
+
+function togglePause() {
+    if (state === 'running') {
+        state = 'paused';
+        oText.textContent = 'ПАУЗА';
+        oHint.textContent = 'нажми P или кнопку';
+        overlay.classList.remove('hidden');
+        btnStart.textContent = 'ПРОДОЛЖИТЬ';
+    } else if (state === 'paused') {
+        state = 'running';
+        overlay.classList.add('hidden');
+        btnStart.textContent = 'ПАУЗА';
+        lastTs = 0; // сбрасываем таймер чтоб не прыгнуло
+    }
+}
+
+function gameOver() {
+    state = 'dead';
+    oText.innerHTML      = 'GAME<br>OVER';
+    oHint.textContent    = 'Очки: ' + score;
+    startBtn.textContent = 'ЕЩЁ РАЗ';
+    overlay.classList.remove('hidden');
+    btnStart.textContent = 'ЕЩЁ РАЗ';
+}
+
+// ════════════════════════════════════════════
+// ГЛАВНЫЙ ЦИКЛ
+// ════════════════════════════════════════════
+
+function loop(ts) {
+    rafId = requestAnimationFrame(loop);
+
+    if (state === 'running') {
+        const dt = lastTs ? ts - lastTs : 0;
+        lastTs   = ts;
+        dropTimer += dt;
+
+        // Автопадение
+        if (dropTimer >= levelDelay(level)) {
+            dropTimer = 0;
+            if (!tryMove(0, 1)) lockPiece();
+        }
+    }
+
+    drawBoard();
+    drawNext();
+}
+
+// ════════════════════════════════════════════
+// РИСОВАНИЕ
+// ════════════════════════════════════════════
+
+function drawCell(ctx_, c, r, color, dark, size) {
+    const x = c * size, y = r * size;
+    // Основной цвет
+    ctx_.fillStyle = color;
+    ctx_.fillRect(x, y, size, size);
+    // Тёмная обводка (нижний и правый край — тень)
+    ctx_.fillStyle = dark;
+    ctx_.fillRect(x, y + size - 2, size, 2);     // низ
+    ctx_.fillRect(x + size - 2, y, 2, size);     // право
+    // Светлый блик (верхний и левый)
+    ctx_.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx_.fillRect(x, y, size, 2);
+    ctx_.fillRect(x, y, 2, size);
+}
+
+// "Тень" — куда упадёт фигура
+function ghostY() {
+    if (!piece) return piece?.y;
+    let gy = piece.y;
+    while (canPlace(piece.type, piece.rot, piece.x, gy + 1)) gy++;
+    return gy;
+}
+
+function drawBoard() {
+    // Фон
+    ctx.fillStyle = '#020d1a';
+    ctx.fillRect(0, 0, COLS * CELL, ROWS * CELL);
+
+    // Сетка
+    ctx.fillStyle = '#0a1e2e';
+    for (let c = 0; c < COLS; c++)
+        for (let r = 0; r < ROWS; r++)
+            if ((c + r) % 2 === 0) ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+
+    // Зафиксированные клетки
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (board[r][c]) {
+                const p = PIECES[board[r][c] - 1];
+                drawCell(ctx, c, r, p.color, p.dark, CELL);
+            }
+        }
+    }
+
+    // Тень текущей фигуры
+    if (piece && state === 'running') {
+        const gy = ghostY();
+        cells(piece.type, piece.rot, piece.x, gy).forEach(([c, r]) => {
+            ctx.fillStyle = 'rgba(255,255,255,0.07)';
+            ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+        });
+    }
+
+    // Текущая фигура
+    if (piece) {
+        const p = PIECES[piece.type];
+        cells(piece.type, piece.rot, piece.x, piece.y).forEach(([c, r]) => {
+            drawCell(ctx, c, r, p.color, p.dark, CELL);
+        });
+    }
+}
+
+function drawNext() {
+    const NX_CELL = 16;
+    nxCtx.fillStyle = '#020d1a';
+    nxCtx.fillRect(0, 0, 80, 80);
+    if (next === null) return;
+
+    const p      = PIECES[next];
+    const shape  = p.shapes[0];
+    // Центрируем превью в квадрате 80×80
+    const minC   = Math.min(...shape.map(([c]) => c));
+    const maxC   = Math.max(...shape.map(([c]) => c));
+    const minR   = Math.min(...shape.map(([, r]) => r));
+    const maxR   = Math.max(...shape.map(([, r]) => r));
+    const offX   = Math.floor((4 - (maxC - minC + 1)) / 2) - minC;
+    const offY   = Math.floor((4 - (maxR - minR + 1)) / 2) - minR;
+
+    shape.forEach(([c, r]) => {
+        drawCell(nxCtx, c + offX, r + offY, p.color, p.dark, NX_CELL);
+    });
+}
+
+// ════════════════════════════════════════════
+// СТАРТ
+// ════════════════════════════════════════════
+
+posOverlay();
+overlay.classList.remove('hidden');
+drawBoard();
+rafId = requestAnimationFrame(loop);
+</script>
+</body>
+</html>

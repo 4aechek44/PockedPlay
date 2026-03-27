@@ -9,7 +9,6 @@ const navHTML = `
 <nav id="main-nav">
     <button class="nav-home"><a href="index.html">Главная</a></button>
     <button class="nav-games"><a href="gamehub.html">Игры</a></button>
-    <button class="nav-profile"><a href="profile.html">Профиль</a></button>
 </nav>
 `;
  
